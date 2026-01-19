@@ -67,7 +67,7 @@ export default function EventTimer({ title, targetTime, isSpecial = false }: Eve
       };
 
   return (
-    <div className={`rounded-xl p-6 border sticky top-4 transition-all duration-300 ${styles.container}`}>
+    <div className={`rounded-xl p-6 border transition-all duration-300 ${styles.container}`}>
       {/* 顶部标签 */}
       <div className="flex items-center space-x-2 mb-3 opacity-90">
         <span className="text-xl">{styles.icon}</span>
