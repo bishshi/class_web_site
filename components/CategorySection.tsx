@@ -16,6 +16,17 @@ type CategoryProps = {
 };
 
 export default function CategorySection({ title, articles, color = "bg-blue-500" }: CategoryProps) {
+
+  // 分类名映射为路由 slug
+  const categoryMap: Record<string, string> = {
+    "师资力量": "Teacher",
+    "学生风采": "Student",
+    "班级活动": "Event",
+    "特别策划": "SpecialEvent",
+  };
+
+  const slug = categoryMap[title] || title;
+
   return (
     <div className="mb-12">
       <div className="flex items-center justify-between mb-6 border-b pb-2">
@@ -23,16 +34,16 @@ export default function CategorySection({ title, articles, color = "bg-blue-500"
           <div className={`w-1.5 h-6 ${color} rounded-full`}></div>
           <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
         </div>
-        {/* 这里链接可以是英文分类名，如果需要可以做映射，暂时保持 title */}
-        <Link href={`/category/${title}`} className="text-sm text-gray-500 hover:text-blue-600">
+        {/* 使用映射后的 slug 作为分类路由 */}
+        <Link href={`/category/${slug}`} className="text-sm text-gray-500 hover:text-blue-600">
           查看更多 &rarr;
         </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {articles.map((item) => (
-          // 2. 修改：href 使用 documentId 跳转
-          // 3. 保持：key 依然使用 item.id (这是 React 渲染的最佳实践)
+          // 2. href 使用 documentId 跳转
+          // 3. key 依然使用 item.id
           <Link 
             href={`/article/${item.documentId}`} 
             key={item.id} 
@@ -50,7 +61,6 @@ export default function CategorySection({ title, articles, color = "bg-blue-500"
               </p>
               <div className="flex items-center justify-between text-xs text-gray-400">
                 <span>{item.date}</span>
-                {/* 可以在这里加阅读量，如果没有暂时留空 */}
                 <span>阅读全文 &rarr;</span>
               </div>
             </div>

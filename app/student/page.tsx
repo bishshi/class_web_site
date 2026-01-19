@@ -1,51 +1,63 @@
-// app/page.tsx
-import Image from "next/image";
-import { fetchFromStrapi, STRAPI_URL } from "@/lib/api";
+import Link from 'next/link';
+import { Student } from '@/types/student'; // 假设您定义了类型
 
-export default async function Home() {
-  // 1. 调用我们在 lib 写好的工具，记得加 populate=* 拿图片
-  const students = await fetchFromStrapi("students?populate=*");
+async function getStudents() {
+  // Strapi v5: 使用 documentId，返回扁平化 data 数组
+  // 我们只取列表页需要的字段以优化性能
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/students?fields[0]=Name&fields[1]=Photo&fields[2]=location&fields[3]=documentId`,
+    { cache: 'no-store' }
+  );
+  const json = await res.json();
+  return json.data as Student[];
+}
+
+export default async function StudentListPage() {
+  const students = await getStudents();
 
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* 标题区 */}
-        <header className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">三年二班全体成员</h1>
-          <p className="text-gray-500">永远的 We Are Family</p>
-        </header>
+    <div className="max-w-7xl mx-auto px-6 py-12">
+      <header className="mb-12">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">学子风采</h1>
+        <p className="text-gray-500">认识我们要改变世界的未来之星</p>
+      </header>
 
-        {/* 核心：响应式网格布局 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {students.map((student: any) => {
-            // 安全获取图片地址，防止报错
-            const imageUrl = student.attributes.AvatarUrl || "https://via.placeholder.com/400";
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12">
+        {students.map((student) => (
+          <Link 
+            href={`/students/${student.documentId}`} 
+            key={student.documentId}
+            className="group block"
+          >
+            {/* 照片区域：无边框，纯粹的圆角矩形 */}
+            <div className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-gray-100 mb-4 relative">
+              {student.Photo ? (
+                <img 
+                  src={student.Photo} 
+                  alt={student.Name}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-300">
+                  No Photo
+                </div>
+              )}
+            </div>
 
-            return (
-              <div key={student.id} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition duration-300 overflow-hidden group">
-                {/* 图片区域 */}
-                <div className="relative h-64 w-full overflow-hidden">
-                  <Image
-                    src={imageUrl}
-                    alt={student.attributes.Name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition duration-500"
-                  />
-                </div>
-                
-                {/* 文字区域 */}
-                <div className="p-5">
-                  <h2 className="text-xl font-bold text-gray-800">{student.attributes.Name}</h2>
-                  <p className="text-sm text-indigo-600 font-medium mb-2">学号: {student.attributes.StudentID || "N/A"}</p>
-                  <p className="text-gray-600 text-sm line-clamp-2">
-                    {student.attributes.Bio || "这个同学很懒，什么都没写..."}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+            {/* 信息区域 */}
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                {student.Name}
+              </h3>
+              {student.location && (
+                <p className="text-sm text-gray-500 mt-1 flex items-center">
+                  <span className="mr-1">📍</span> {student.location}
+                </p>
+              )}
+            </div>
+          </Link>
+        ))}
       </div>
-    </main>
+    </div>
   );
 }

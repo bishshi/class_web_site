@@ -9,10 +9,11 @@ export default function Navbar() {
 
   const NAV_ITEMS = [
     { name: '首页', href: '/' },
-    { name: '师资力量', href: '/category/teacher' }, // 对应 Teacher
-    { name: '学生风采', href: '/category/student' }, // 对应 Student
-    { name: '班级活动', href: '/category/event' },   // 对应 Event
-    { name: '特别策划', href: '/category/special-event' }, // 对应 SpecialEvent
+    { name: '师资力量', href: '/category/Teacher' }, // 对应 Teacher
+    { name: '学生风采', href: '/category/Student' }, // 对应 Student
+    { name: '班级活动', href: '/category/Event' },   // 对应 Event
+    { name: '特别策划', href: '/category/SpecialEvent' }, // 对应 SpecialEvent
+    { name: '学生简介', href: '/student' },
   ];
 
   return (
