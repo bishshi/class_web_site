@@ -26,7 +26,7 @@ export type TimerData = {
 type ArticleCategory = 'teacher' | 'student' | 'event' | 'special_event';
 
 // --- 2. 基础配置 ---
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://127.0.0.1:1337';
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
 const REVALIDATE_TIME = 60; 
 
 // --- 3. 数据获取函数 ---

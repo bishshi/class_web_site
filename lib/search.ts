@@ -2,7 +2,7 @@
 import { SearchResultItem } from "@/types/search";
 
 // 1. 获取 Strapi 地址 (优先读取环境变量，本地开发回退到 localhost)
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || "http://localhost:1337";
 
 // 防抖辅助函数
 export function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {

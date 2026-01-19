@@ -16,7 +16,7 @@ interface Article {
 }
 
 async function getArticle(documentId: string): Promise<Article | null> {
-  const baseUrl = process.env.STRAPI_API_URL || "http://localhost:1337";
+  const baseUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || "http://localhost:1337";
   try {
     const res = await fetch(`${baseUrl}/api/articles/${documentId}?populate=*`, {
       next: { revalidate: 60 },

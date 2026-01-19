@@ -5,7 +5,7 @@ import { Student } from '@/types/student';
 // 获取单条学生数据
 async function getStudent(documentId: string) {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/students/${documentId}`,
+    `${process.env.NEXT_PUBLIC_STRAPI_API_URL}/api/students/${documentId}`,
     { cache: 'no-store' }
   );
   
