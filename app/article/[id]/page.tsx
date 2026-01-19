@@ -10,7 +10,7 @@ interface Article {
   title: string;
   summary: string;
   content: BlocksContent;
-  category: "teacher" | "student" | "event" | "special_event";
+  category: "Teacher" | "Student" | "Event" | "SpecialEvent";
   cover: string;
   publishedAt: string;
 }
@@ -36,10 +36,10 @@ const formatDate = (dateString: string) => {
 };
 
 const categoryConfig: Record<string, { label: string; color: string; bg: string }> = {
-  teacher: { label: "师资力量", color: "text-purple-700", bg: "bg-purple-50" },
-  student: { label: "学生风采", color: "text-blue-700", bg: "bg-blue-50" },
-  event: { label: "班级活动", color: "text-amber-700", bg: "bg-amber-50" },
-  special_event: { label: "特别策划", color: "text-rose-700", bg: "bg-rose-50" },
+  Teacher: { label: "师资力量", color: "text-purple-700", bg: "bg-purple-50" },
+  Student: { label: "学生风采", color: "text-blue-700", bg: "bg-blue-50" },
+  Event: { label: "班级活动", color: "text-amber-700", bg: "bg-amber-50" },
+  SpecialEvent: { label: "特别策划", color: "text-rose-700", bg: "bg-rose-50" },
 };
 
 type Props = {
