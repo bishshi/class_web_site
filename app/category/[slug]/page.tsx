@@ -36,8 +36,8 @@ interface Article {
   title: string;
   summary: string;
   // 这里的类型也对应更新，确保 TS 智能提示正确
-  category: "Teacher" | "Student" | "Event" | "Special Event"; 
-  image: string;
+  category: "Teacher" | "Student" | "Event" | "SpecialEvent"; 
+  cover: string;
   publishedAt: string;
 }
 
@@ -132,7 +132,7 @@ export default async function CategoryPage({
                 <Link href={`/article/${article.documentId}`} className="block h-full">
                   <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100 rounded-lg mb-6">
                     <img
-                      src={article.image}
+                      src={article.cover}
                       alt={article.title}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />

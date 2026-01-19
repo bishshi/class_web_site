@@ -11,7 +11,7 @@ interface Article {
   summary: string;
   content: BlocksContent;
   category: "teacher" | "student" | "event" | "special_event";
-  image: string;
+  cover: string;
   publishedAt: string;
 }
 
@@ -72,10 +72,10 @@ export default async function ArticlePage({ params }: Props) {
       <article className="container mx-auto max-w-7xl px-4 sm:px-6">
 
         {/* 1. 封面图: 撑满 7xl 宽度，视觉更震撼 */}
-        {article.image && (
+        {article.cover && (
           <div className="mb-12 overflow-hidden rounded-2xl bg-slate-100">
             <img
-              src={article.image}
+              src={article.cover}
               alt={article.title}
               // max-h-[70vh] 让大图在宽屏下高度更舒展
               className="w-full h-auto object-cover max-h-[70vh]" 
