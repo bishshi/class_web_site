@@ -37,7 +37,7 @@ export default function HomeCarousel({ slides }: HomeCarouselProps) {
   }, [slides.length]);
 
   return (
-    <div className="relative w-full h-[300px] md:h-[450px] overflow-hidden group bg-gray-100">
+    <div className="relative w-full aspect-[16/9] md:aspect-[21/9] overflow-hidden group bg-gray-100">
       <div 
         className="flex transition-transform duration-500 ease-out h-full" 
         style={{ transform: `translateX(-${current * 100}%)` }}
