@@ -24,7 +24,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo / 班级名称 */}
           <Link href="/" className="text-xl font-bold text-gray-800 hover:text-blue-600 transition">
-            高三(2)班
+            Class 612
           </Link>
 
           {/* 右侧功能区容器：包含 导航菜单 + 搜索 + 手机开关 */}
