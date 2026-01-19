@@ -11,11 +11,12 @@ export default function Navbar() {
 
   const NAV_ITEMS = [
     { name: '首页', href: '/' },
-    { name: '师资力量', href: '/category/Teacher' },
+    { name: '教师风采', href: '/category/Teacher' },
     { name: '学生风采', href: '/category/Student' },
     { name: '班级活动', href: '/category/Event' },
     { name: '特别策划', href: '/category/SpecialEvent' },
-    { name: '学生简介', href: '/student' },
+    { name: '学生档案', href: '/students' },
+    { name: '师资力量', href: '/teachers' },
   ];
 
   return (
