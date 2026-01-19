@@ -1,6 +1,6 @@
 // api.ts
 // lib/api.ts
-export const STRAPI_URL = "http://127.0.0.1:1337";
+export const STRAPI_URL = "https://cms.class.biss.click";
 
 export async function fetchFromStrapi(endpoint: string) {
   // 拼接 URL，例如: http://127.0.0.1:1337/api/students?populate=*
