@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar"; // 引入组件
 import packageJson from "../package.json";
+import CustomContextMenu from '@/components/CustomContextMenu'
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,6 +20,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className={inter.className}>
+        <CustomContextMenu>
         {/* 1. 放在这里，所有页面都会有导航条 */}
         <Navbar /> 
         
@@ -30,6 +32,7 @@ export default function RootLayout({
           © 2026  Class 612 Website. Powered by BI. Using Next.js & Strapi.<br />
           Version: {packageJson.version} 
         </footer>
+        </CustomContextMenu>
       </body>
     </html>
   );

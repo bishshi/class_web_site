@@ -1,0 +1,78 @@
+.menu {
+  position: fixed; /* 改为 fixed */
+  background: rgba(255, 255, 255, 0.75); /* 半透明白色 */
+  backdrop-filter: blur(10px); /* 磨砂玻璃效果 */
+  -webkit-backdrop-filter: blur(10px); /* Safari 兼容 */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  z-index: 9999;
+  min-width: 180px;
+  padding: 6px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.menuList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menuList li {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #333;
+}
+
+.menuList li:hover {
+  background: rgba(0, 0, 0, 0.08);
+  transform: translateX(2px);
+}
+
+.menuList li:active {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.icon {
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .menu {
+    background: rgba(30, 30, 30, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+  
+  .menuList li {
+    color: #e0e0e0;
+  }
+  
+  .menuList li:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .menuList li:active {
+    background: rgba(255, 255, 255, 0.15);
+  }
+}

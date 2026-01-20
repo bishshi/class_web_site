@@ -3,6 +3,7 @@ import NoticeBar from '@/components/NoticeBar';
 import CategorySection from '@/components/CategorySection';
 import EventTimer from '@/components/EventTimer'; 
 import WelcomeCard from '@/components/WelcomeCard';
+import CustomContextMenu from '@/components/CustomContextMenu'
 
 // --- 类型定义 ---
 export type UIArticle = {
@@ -20,7 +21,7 @@ export type TimerData = {
   isSpecial: boolean;
 };
 
-type ArticleCategory = 'teacher' | 'student' | 'event' | 'special_event';
+type ArticleCategory = 'Teacher' | 'Student' | 'Event' | 'SpecialEvent';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
 const REVALIDATE_TIME = 60; 

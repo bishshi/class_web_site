@@ -67,6 +67,16 @@ export default function WelcomeCard() {
       setLoading(true);
       setError(false);
 
+      // 获取 API Key（优先使用环境变量）
+      const apiKey = process.env.NEXT_PUBLIC_TENCENT_MAP_KEY;
+      
+      if (!apiKey) {
+        console.error('腾讯地图 API Key 未配置');
+        setError(true);
+        setLoading(false);
+        return;
+      }
+
       // 调用腾讯地图 API（JSONP 方式）
       const script = document.createElement('script');
       const callbackName = `tencentMapCallback_${Date.now()}`;
@@ -109,8 +119,8 @@ export default function WelcomeCard() {
         delete (window as any)[callbackName];
       };
       
-      // 创建 JSONP 请求
-      script.src = `https://apis.map.qq.com/ws/location/v1/ip?key=JOCBZ-5FCRV-CWTP7-5HXTF-OODC2-2PF6R&output=jsonp&callback=${callbackName}`;
+      // 创建 JSONP 请求（使用环境变量中的 API Key）
+      script.src = `https://apis.map.qq.com/ws/location/v1/ip?key=${apiKey}&output=jsonp&callback=${callbackName}`;
       script.onerror = () => {
         setError(true);
         setLoading(false);
