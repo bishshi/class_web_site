@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import HomeCarousel, { SlideItem } from '@/components/HomeCarousel';
 import NoticeBar from '@/components/NoticeBar';
-import CategorySection from '@/components/CategorySection';
+import CategorySection from '@/components/CategorySection'; 
 import EventTimer from '@/components/EventTimer'; 
 import WelcomeCard from '@/components/WelcomeCard';
 
@@ -14,22 +14,20 @@ export type UIArticle = {
   date: string;
 };
 
-// 教师数据类型
-export type TeacherData = {
+export type TeacherProfile = {
   id: number;
   documentId: string;
   name: string;
-  title: string;     // 职称
+  title: string;
   photoUrl: string;
-  subject: string;   // 科目
+  subject: string;
 };
 
-// 学生数据类型
-export type StudentData = {
+export type StudentProfile = {
   id: number;
   documentId: string;
   name: string;
-  location: string;  // 对应 location 字段
+  location: string;
   photoUrl: string;
 };
 
@@ -40,13 +38,12 @@ export type TimerData = {
   isSpecial: boolean;
 };
 
-type ArticleCategory = 'Event' | 'SpecialEvent';
+type ArticleCategory = 'Teacher' | 'Student' | 'Event' | 'SpecialEvent';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
 const REVALIDATE_TIME = 60; 
 
 // --- 数据获取函数 ---
-
 async function getSlides(): Promise<SlideItem[]> {
   try {
     const res = await fetch(`${STRAPI_URL}/api/slides?sort=order:asc`, { next: { revalidate: REVALIDATE_TIME } });
@@ -101,8 +98,7 @@ async function getTimers(): Promise<TimerData[]> {
   } catch (error) { return []; }
 }
 
-// 获取教师 (限制显示4个)
-async function getTeachers(): Promise<TeacherData[]> {
+async function getTeacherProfiles(): Promise<TeacherProfile[]> {
   try {
     const res = await fetch(`${STRAPI_URL}/api/teachers?pagination[pageSize]=4&sort[0]=createdAt:asc`, { next: { revalidate: REVALIDATE_TIME } });
     const json = await res.json();
@@ -117,10 +113,8 @@ async function getTeachers(): Promise<TeacherData[]> {
   } catch (error) { return []; }
 }
 
-// 获取学生 (限制显示4个)
-async function getStudents(): Promise<StudentData[]> {
+async function getStudentProfiles(): Promise<StudentProfile[]> {
   try {
-    // 对应您的 Student 页面逻辑，获取 Name, Photo, location
     const res = await fetch(`${STRAPI_URL}/api/students?pagination[pageSize]=4&sort[0]=createdAt:asc&fields[0]=Name&fields[1]=Photo&fields[2]=location&fields[3]=documentId`, { next: { revalidate: REVALIDATE_TIME } });
     const json = await res.json();
     return json.data?.map((item: any) => ({
@@ -133,8 +127,22 @@ async function getStudents(): Promise<StudentData[]> {
   } catch (error) { return []; }
 }
 
-// --- 内部组件：教师卡片 (样式：带边框卡片，4:3图片) ---
-const TeacherCard = ({ teacher }: { teacher: TeacherData }) => (
+// --- 组件定义 ---
+
+// 1. 大标题组件 (居中、加框、铺色)
+const SectionBigTitle = ({ title, icon, colorClass }: { title: string, icon: string, colorClass: string }) => (
+  <div className="flex justify-center items-center mb-8 mt-4">
+    <div className={`${colorClass} text-white px-10 py-3 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-3`}>
+      <span className="text-2xl">{icon}</span>
+      <h2 className="text-xl sm:text-2xl font-bold tracking-wide">
+        {title}
+      </h2>
+    </div>
+  </div>
+);
+
+// 2. 档案库使用的卡片组件
+const TeacherCard = ({ teacher }: { teacher: TeacherProfile }) => (
   <Link href={`/teachers/${teacher.documentId}`} className="group block h-full">
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">
       <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
@@ -157,8 +165,7 @@ const TeacherCard = ({ teacher }: { teacher: TeacherData }) => (
   </Link>
 );
 
-// --- 内部组件：学生卡片 (样式：无边框，3:4图片，Location图标) ---
-const StudentCard = ({ student }: { student: StudentData }) => (
+const StudentCard = ({ student }: { student: StudentProfile }) => (
   <Link href={`/students/${student.documentId}`} className="group block">
     <div className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-gray-100 mb-3 relative">
       {student.photoUrl ? (
@@ -180,13 +187,25 @@ const StudentCard = ({ student }: { student: StudentData }) => (
 
 // --- 页面主组件 ---
 export default async function HomePage() {
-  const [slides, notices, specialEventData, eventData, teachers, students, timers] = await Promise.all([
+  const [
+    slides, 
+    notices, 
+    specialArticleData, 
+    eventArticleData, 
+    teacherArticleData, 
+    studentArticleData, 
+    teacherProfileData,
+    studentProfileData,
+    timers
+  ] = await Promise.all([
     getSlides(),
     getNotices(),
     getArticlesByCategory('SpecialEvent'),
     getArticlesByCategory('Event'),
-    getTeachers(),
-    getStudents(),
+    getArticlesByCategory('Teacher'), // 教师文章
+    getArticlesByCategory('Student'), // 学生文章
+    getTeacherProfiles(),             // 教师档案
+    getStudentProfiles(),             // 学生档案
     getTimers(),
   ]);
 
@@ -201,56 +220,126 @@ export default async function HomePage() {
         <div className={`grid gap-6 lg:gap-8 ${hasTimer ? "lg:grid-cols-12" : "lg:grid-cols-1"}`}>
           
           {/* ============ 左侧主内容区 ============ */}
-          <div className={`space-y-12 lg:space-y-16 ${hasTimer ? "lg:col-span-8 xl:col-span-9" : ""}`}>
+          <div className={`space-y-16 ${hasTimer ? "lg:col-span-8 xl:col-span-9" : ""}`}>
             
-            {/* 1. 班级热点 (原有) */}
+            {/* =========================================
+                板块一：班级热点 (Class Highlights)
+                包含：特别策划 + 班级活动
+            ========================================= */}
             <section className="animate-fade-in">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-1 h-7 bg-red-500 rounded-full"></div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">🔥 班级热点</h2>
-              </div>
-              <div className="space-y-6">
-                <div className="group"><CategorySection title="特别策划" articles={specialEventData} color="bg-red-500" /></div>
-                <div className="group"><CategorySection title="班级活动" articles={eventData} color="bg-orange-500" /></div>
-              </div>
-            </section>
-
-            {/* 2. 师资力量 (网格布局) */}
-            <section className="animate-fade-in animation-delay-200">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="w-1 h-7 bg-blue-500 rounded-full"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">👨‍🏫 师资力量</h2>
+              <SectionBigTitle 
+                title="班级热点" 
+                icon="🔥" 
+                colorClass="bg-gradient-to-r from-red-500 to-rose-600" 
+              />
+              
+              <div className="space-y-10">
+                {/* 子项1：特别策划 */}
+                <div className="group">
+                  <CategorySection 
+                    title="特别策划" 
+                    articles={specialArticleData} 
+                    color="bg-red-500" // 传递原来的装饰条颜色
+                  />
                 </div>
-                <Link href="/teachers" className="text-sm text-gray-500 hover:text-blue-600 transition-colors">查看全部 &rarr;</Link>
+                
+                {/* 子项2：班级活动 */}
+                <div className="group">
+                  <CategorySection 
+                    title="班级活动" 
+                    articles={eventArticleData} 
+                    color="bg-orange-500" 
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {teachers.map(teacher => <TeacherCard key={teacher.documentId} teacher={teacher} />)}
-              </div>
-              {teachers.length === 0 && <p className="text-gray-400 text-sm">暂无数据</p>}
             </section>
 
-            {/* 3. 学生风采 (网格布局) */}
+            {/* =========================================
+                板块二：风采展示 (Talent Showcase)
+                包含：学生风采文章 + 教师风采文章
+            ========================================= */}
             <section className="animate-fade-in animation-delay-200">
-              <div className="flex items-center justify-between mb-6">
-                 <div className="flex items-center gap-3">
-                    <div className="w-1 h-7 bg-green-500 rounded-full"></div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">🌟 学生风采</h2>
-                 </div>
-                 <Link href="/students" className="text-sm text-gray-500 hover:text-green-600 transition-colors">查看全部 &rarr;</Link>
+              <SectionBigTitle 
+                title="风采展示" 
+                icon="🌟" 
+                colorClass="bg-gradient-to-r from-blue-500 to-indigo-600" 
+              />
+
+              <div className="space-y-10">
+                {/* 子项1：学生风采 */}
+                <div className="group">
+                  <CategorySection 
+                    title="学生风采" 
+                    articles={studentArticleData} 
+                    color="bg-green-500" 
+                  />
+                </div>
+
+                {/* 子项2：教师风采 */}
+                <div className="group">
+                  <CategorySection 
+                    title="教师风采" 
+                    articles={teacherArticleData} 
+                    color="bg-blue-500" 
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {students.map(student => <StudentCard key={student.documentId} student={student} />)}
+            </section>
+
+            {/* =========================================
+                板块三：档案库 (Archives)
+                包含：学生档案卡片 + 教师档案卡片
+            ========================================= */}
+            <section className="animate-fade-in animation-delay-300">
+              <SectionBigTitle 
+                title="档案库" 
+                icon="📂" 
+                colorClass="bg-gradient-to-r from-emerald-500 to-teal-600" 
+              />
+
+              <div className="space-y-12">
+                {/* 子项1：学生档案 (Grid) */}
+                <div>
+                  <div className="flex items-center justify-between mb-6 border-l-4 border-emerald-500 pl-4">
+                    <h3 className="text-xl font-bold text-gray-800">🎓 学生档案</h3>
+                    <Link href="/students" className="text-sm text-gray-500 hover:text-emerald-600 transition-colors">
+                      全部学生 &rarr;
+                    </Link>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                    {studentProfileData.map(student => (
+                      <StudentCard key={student.documentId} student={student} />
+                    ))}
+                  </div>
+                  {studentProfileData.length === 0 && <p className="text-gray-400 text-sm">暂无学生档案</p>}
+                </div>
+
+                {/* 子项2：教师档案 (Grid) */}
+                <div>
+                  <div className="flex items-center justify-between mb-6 border-l-4 border-blue-500 pl-4">
+                    <h3 className="text-xl font-bold text-gray-800">👨‍🏫 教师档案</h3>
+                    <Link href="/teachers" className="text-sm text-gray-500 hover:text-blue-600 transition-colors">
+                      全部教师 &rarr;
+                    </Link>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                    {teacherProfileData.map(teacher => (
+                      <TeacherCard key={teacher.documentId} teacher={teacher} />
+                    ))}
+                  </div>
+                  {teacherProfileData.length === 0 && <p className="text-gray-400 text-sm">暂无教师档案</p>}
+                </div>
               </div>
-              {students.length === 0 && <p className="text-gray-400 text-sm">暂无数据</p>}
             </section>
 
           </div>
 
-          {/* ============ 右侧边栏 (原有) ============ */}
+          {/* ============ 右侧边栏 (保持原样) ============ */}
           {hasTimer && (
             <aside className={`${hasTimer ? "lg:col-span-4 xl:col-span-3" : "hidden"}`}>
-              <div className="sticky top-20 lg:top-24 space-y-4">
+              <div className="sticky top-20 lg:top-20 space-y-4">
                 <div className="animate-fade-in"><WelcomeCard /></div>
                 {timers.map((timer, index) => (
                   <div key={timer.id} className="animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>

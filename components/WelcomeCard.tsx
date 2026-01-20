@@ -209,11 +209,11 @@ export default function WelcomeCard() {
       </div>
 
       {/* 底部装饰 */}
-      <div className="mt-4 pt-4 border-t border-slate-200/60">
+{/*       <div className="mt-4 pt-4 border-t border-slate-200/60">
         <p className="text-xs text-slate-400 text-center">
           📍 基于腾讯地图定位服务
         </p>
-      </div>
+      </div> */}
     </div>
   );
 }
