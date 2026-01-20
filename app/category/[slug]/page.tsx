@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 // -----------------------------------------------------------------------------
 const CATEGORY_CONFIG: Record<string, { label: string; color: string; desc: string }> = {
   "Teacher": {
-    label: "师资力量",
+    label: "教师风采",
     color: "bg-purple-100 text-purple-800",
     desc: "名师荟萃，匠心育人"
   },

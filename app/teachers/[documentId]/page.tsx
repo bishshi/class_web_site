@@ -2,62 +2,70 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import RichTextRenderer from '@/components/RichTextRenderer';
 
-// 1. 定义接口：对应 Strapi v5 的标准返回结构
-// 注意：为了稳妥，这里定义为小写开头，因为 API 通常返回小写
+// 1. 接口定义
 interface TeacherData {
   documentId: string;
   name: string;
   title: string;
   photo: string | null;
   subject: string;
-  phone: string; // 建议前端统一处理为 string
+  phone: string;
   teachFrom: string | null;
   teachTo: string | null;
-  introduction: string; // CKEditor 内容
+  introduction: string;
 }
 
-// 2. 数据获取函数 (Strapi v5 专用)
+// 2. 数据获取函数 (含详细调试日志)
 async function getTeacher(documentId: string): Promise<TeacherData | null> {
-  // 防止 Node.js 解析 localhost 报错，强制使用 IPv4
   const baseUrl = process.env.STRAPI_API_URL || "http://127.0.0.1:1337";
   
+  // 关键：添加 populate=* 确保获取图片和关联字段
+  const url = `${baseUrl}/api/teachers/${documentId}?populate=*`;
+
+  console.log(`\n🔴 [Debug Start] 正在请求 Strapi: ${url}`);
+
   try {
-    // Strapi v5 获取单条数据的标准 API: /api/teachers/:documentId
-    const url = `${baseUrl}/api/teachers/${documentId}`;
-    
     const res = await fetch(url, { 
-      cache: 'no-store', // 开发时不缓存
+      cache: 'no-store', // 开发环境不缓存
     });
 
+    console.log(`👉 HTTP 状态码: ${res.status}`);
+
     if (!res.ok) {
-      if (res.status === 404) return null;
+      if (res.status === 404) {
+        console.error(`❌ [Debug Error] Strapi 返回 404 (Not Found)。\n可能的两个原因：\n1. ID 错误 (v5 必须用 documentId)\n2. 该条目在后台是 Draft (未发布) 状态`);
+        return null;
+      }
+      const errText = await res.text();
+      console.error(`❌ [Debug Error] API 错误详情:`, errText);
       throw new Error(`API Error: ${res.status}`);
     }
 
     const json = await res.json();
-    const raw = json.data; // Strapi v5 直接在 data 下，没有 attributes
+    // 打印数据结构，帮助检查字段名大小写
+    console.log(`✅ [Debug Success] 收到数据 (部分预览):`, JSON.stringify(json, null, 2).slice(0, 500) + '...');
 
+    const raw = json.data;
     if (!raw) return null;
 
-    // === 关键重构：字段映射与大小写兼容 ===
-    // 很多时候后台建的是 "Name"，但 API 返回的是 "name"
-    // 这里做了双重检查 (raw.Name || raw.name)
+    // 字段映射 (兼容大小写)
     const teacher: TeacherData = {
       documentId: raw.documentId,
-      name:         raw.Name || raw.name || "未命名教师",
-      title:        raw.Title || raw.title || "",
-      photo:        raw.Photo || raw.photo || null,
-      subject:      raw.Subject || raw.subject || "",
-      phone:        String(raw.Phone || raw.phone || ""),
-      teachFrom:    raw.TeachFrom || raw.teachFrom || null,
-      teachTo:      raw.TeachTo || raw.teachTo || null,
+      name:       raw.Name || raw.name || "未命名教师",
+      title:      raw.Title || raw.title || "",
+      // 图片处理：Strapi v5 通常返回完整的 url 或需要拼接，这里做了防空处理
+      photo:      (raw.Photo || raw.photo)?.url ? `${baseUrl}${(raw.Photo || raw.photo).url}` : null,
+      subject:    raw.Subject || raw.subject || "",
+      phone:      String(raw.Phone || raw.phone || ""),
+      teachFrom:  raw.TeachFrom || raw.teachFrom || null,
+      teachTo:    raw.TeachTo || raw.teachTo || null,
       introduction: raw.Introduction || raw.introduction || "",
     };
 
     return teacher;
 
   } catch (error) {
-    console.error("Fetch error:", error);
+    console.error("❌ [Debug Exception] Fetch error:", error);
     return null;
   }
 }
@@ -75,10 +83,21 @@ const formatDate = (dateString?: string | null) => {
   }
 };
 
-export default async function TeacherPage({ params }: { params: { documentId: string } }) {
-  const teacher = await getTeacher(params.documentId);
+// === 3. 页面组件 (Next.js 15 修正版) ===
 
-  // 如果获取不到数据，显示 Next.js 标准 404 页面
+// 定义 Props 类型：params 必须是 Promise
+type Props = {
+  params: Promise<{ documentId: string }>;
+};
+
+export default async function TeacherPage({ params }: Props) {
+  // ⚠️ 关键修正：Next.js 15 中必须先 await params
+  const { documentId } = await params;
+
+  // 使用解析出来的 documentId 获取数据
+  const teacher = await getTeacher(documentId);
+
+  // 如果获取不到数据，显示 404
   if (!teacher) {
     notFound();
   }
@@ -87,7 +106,7 @@ export default async function TeacherPage({ params }: { params: { documentId: st
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex flex-col md:flex-row gap-8">
         
-        {/* === 左侧栏: 个人资料卡 === */}
+        {/* 左侧栏: 个人资料卡 */}
         <aside className="w-full md:w-1/3 lg:w-1/4">
           <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-100 sticky top-8">
             
@@ -116,7 +135,6 @@ export default async function TeacherPage({ params }: { params: { documentId: st
                 )}
               </div>
 
-              {/* 学科标签 */}
               {teacher.subject && (
                 <div className="inline-block px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
                   {teacher.subject}
@@ -125,10 +143,7 @@ export default async function TeacherPage({ params }: { params: { documentId: st
 
               <div className="border-t border-gray-100 my-4"></div>
 
-              {/* 联系方式 & 时间 */}
               <div className="space-y-3 text-sm">
-                
-                {/* 电话 */}
                 {teacher.phone && (
                   <div className="flex items-start">
                     <span className="text-gray-500 w-20 shrink-0">联系电话</span>
@@ -136,7 +151,6 @@ export default async function TeacherPage({ params }: { params: { documentId: st
                   </div>
                 )}
 
-                {/* 执教时间范围 */}
                 {(teacher.teachFrom) && (
                   <div className="flex flex-col">
                     <span className="text-gray-500 mb-1">执教时间</span>
@@ -147,18 +161,16 @@ export default async function TeacherPage({ params }: { params: { documentId: st
                     </div>
                   </div>
                 )}
-
               </div>
             </div>
           </div>
         </aside>
 
-        {/* === 右侧栏: 详细介绍 === */}
+        {/* 右侧栏: 详细介绍 */}
         <main className="w-full md:w-2/3 lg:w-3/4">
           <div className="bg-white p-8 shadow-sm rounded-lg border border-gray-100 min-h-[500px]">
              <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">教师简介</h2>
              
-             {/* 富文本渲染组件 */}
              <RichTextRenderer content={teacher.introduction} />
 
              {(!teacher.introduction) && (

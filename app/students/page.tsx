@@ -5,7 +5,7 @@ async function getStudents() {
   // Strapi v5: 使用 documentId，返回扁平化 data 数组
   // 我们只取列表页需要的字段以优化性能
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_STRAPI_API_URL}/api/students?fields[0]=Name&fields[1]=Photo&fields[2]=location&fields[3]=documentId`,
+    `${process.env.NEXT_PUBLIC_STRAPI_URL}/api/students?fields[0]=Name&fields[1]=Photo&fields[2]=location&fields[3]=documentId`,
     { cache: 'no-store' }
   );
   const json = await res.json();
