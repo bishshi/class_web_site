@@ -1,7 +1,24 @@
 // 欢迎语配置文件
 // 根据访客的地理位置返回个性化欢迎语
 
-export const WELCOME_MESSAGES = {
+// 类型定义
+type ProvinceMessages = {
+  [city: string]: string;
+  default: string;
+} | {
+  default: string;
+};
+
+type WelcomeMessagesType = {
+  international: {
+    [country: string]: string;
+  };
+  china: {
+    [province: string]: ProvinceMessages;
+  };
+};
+
+export const WELCOME_MESSAGES: WelcomeMessagesType = {
   // 国际地区
   international: {
     "日本": "よろしく，一起去看樱花吗",
@@ -556,7 +573,7 @@ export function getTimeGreeting(): { emoji: string; text: string } {
 export function getWelcomeMessage(nation: string, province?: string, city?: string): string {
   // 国际地区
   if (nation !== "中国") {
-    return WELCOME_MESSAGES.international[nation] || "带我去你的国家逛逛吧";
+    return WELCOME_MESSAGES.international[nation] ?? "带我去你的国家逛逛吧";
   }
   
   // 中国地区
@@ -569,14 +586,11 @@ export function getWelcomeMessage(nation: string, province?: string, city?: stri
     return "带我去你的城市逛逛吧！";
   }
   
-  // 如果省份数据是对象（有城市细分）
-  if (typeof provinceData === "object") {
-    if (city && provinceData[city]) {
-      return provinceData[city];
-    }
-    return provinceData.default || "带我去你的城市逛逛吧！";
+  // 如果有城市信息，尝试获取城市特定的欢迎语
+  if (city && city in provinceData) {
+    return provinceData[city] as string;
   }
   
-  // 如果省份数据是字符串（直辖市等）
-  return provinceData;
+  // 返回省份默认欢迎语
+  return provinceData.default || "带我去你的城市逛逛吧！";
 }
