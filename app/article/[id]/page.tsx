@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import { Calendar, Tag, ArrowLeft, Clock } from "lucide-react";
 import Link from "next/link";
-import ArticleRichText from "./ArticleRichText";
-import ShareButton from "./ShareButton";
-import CommentSection from "./CommentSection";
-import type { BlocksContent } from "@strapi/blocks-react-renderer";
+import ArticleRichText from "@/components/RichTextRenderer";
+import ShareButton from "@/components/ShareButton";
+import CommentSection from "@/components/CommentSection";
+
 const TWIKOO_ENV_ID = process.env.NEXT_PUBLIC_TWIKOO_ENV_ID || "";
 
 interface Article {
