@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 // -----------------------------------------------------------------------------
 const CATEGORY_CONFIG: Record<string, { label: string; color: string; desc: string }> = {
   "Teacher": {
-    label: "师资队伍",
+    label: "教师风采",
     color: "bg-purple-100 text-purple-800",
     desc: "名师荟萃，匠心育人"
   },
@@ -21,7 +21,7 @@ const CATEGORY_CONFIG: Record<string, { label: string; color: string; desc: stri
     color: "bg-amber-100 text-amber-800",
     desc: "多彩生活，实践真知"
   },
-  "SpecialEvent": { // 注意：这里使用了引号以包含空格
+  "SpecialEvent": {
     label: "特别企划",
     color: "bg-red-100 text-red-800",
     desc: "聚焦热点，深度报道"

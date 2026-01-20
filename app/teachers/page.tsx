@@ -40,9 +40,9 @@ export default async function TeachersIndexPage() {
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-7xl">
-      <div className="text-center mb-12">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">师资力量</h1>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+      <div className="mb-12">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">师资力量</h1>
+        <p className="text-gray-500">
           在这里认识我们的教学团队。
         </p>
       </div>

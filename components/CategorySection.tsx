@@ -19,7 +19,7 @@ export default function CategorySection({ title, articles, color = "bg-blue-500"
 
   // 分类名映射为路由 slug
   const categoryMap: Record<string, string> = {
-    "师资力量": "Teacher",
+    "教师风采": "Teacher",
     "学生风采": "Student",
     "班级活动": "Event",
     "特别策划": "SpecialEvent",
