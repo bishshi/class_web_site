@@ -32,7 +32,7 @@ export default async function StudentProfilePage({ params }: PageProps) {
         
         {/* 左侧：个人档案卡片 (占 4 列) */}
         <div className="lg:col-span-4">
-          <div className="sticky top-12">
+          <div className="sticky top-24">
             <div className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-gray-100 mb-6">
               {student.Photo && (
                 <img 

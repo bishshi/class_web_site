@@ -2,7 +2,7 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import RichTextRenderer from '@/components/RichTextRenderer';
 
-// 1. 接口定义
+// === 类型定义 ===
 interface TeacherData {
   documentId: string;
   name: string;
@@ -15,62 +15,27 @@ interface TeacherData {
   introduction: string;
 }
 
-// 2. 数据获取函数 (含详细调试日志)
-async function getTeacher(documentId: string): Promise<TeacherData | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || "http://127.0.0.1:1337";
-  
-  // 关键：添加 populate=* 确保获取图片和关联字段
-  const url = `${baseUrl}/api/teachers/${documentId}?populate=*`;
+// === 工具函数：智能提取图片 URL ===
+// 兼容：直接字符串 URL、Strapi v4/v5 对象结构、数组结构
+const getPhotoUrl = (photoField: any): string | null => {
+  if (!photoField) return null;
 
-  console.log(`\n🔴 [Debug Start] 正在请求 Strapi: ${url}`);
-
-  try {
-    const res = await fetch(url, { 
-      cache: 'no-store', // 开发环境不缓存
-    });
-
-    console.log(`👉 HTTP 状态码: ${res.status}`);
-
-    if (!res.ok) {
-      if (res.status === 404) {
-        console.error(`❌ [Debug Error] Strapi 返回 404 (Not Found)。\n可能的两个原因：\n1. ID 错误 (v5 必须用 documentId)\n2. 该条目在后台是 Draft (未发布) 状态`);
-        return null;
-      }
-      const errText = await res.text();
-      console.error(`❌ [Debug Error] API 错误详情:`, errText);
-      throw new Error(`API Error: ${res.status}`);
-    }
-
-    const json = await res.json();
-    // 打印数据结构，帮助检查字段名大小写
-    console.log(`✅ [Debug Success] 收到数据 (部分预览):`, JSON.stringify(json, null, 2).slice(0, 500) + '...');
-
-    const raw = json.data;
-    if (!raw) return null;
-
-    // 字段映射 (兼容大小写)
-    const teacher: TeacherData = {
-      documentId: raw.documentId,
-      name:       raw.Name || raw.name || "未命名教师",
-      title:      raw.Title || raw.title || "",
-      // 图片处理：Strapi v5 通常返回完整的 url 或需要拼接，这里做了防空处理
-      photo:      (raw.Photo || raw.photo)?.url ? `${baseUrl}${(raw.Photo || raw.photo).url}` : null,
-      subject:    raw.Subject || raw.subject || "",
-      phone:      String(raw.Phone || raw.phone || ""),
-      teachFrom:  raw.TeachFrom || raw.teachFrom || null,
-      teachTo:    raw.TeachTo || raw.teachTo || null,
-      introduction: raw.Introduction || raw.introduction || "",
-    };
-
-    return teacher;
-
-  } catch (error) {
-    console.error("❌ [Debug Exception] Fetch error:", error);
-    return null;
+  // 1. 如果直接是 URL 字符串
+  if (typeof photoField === 'string') {
+    return photoField.trim();
   }
-}
 
-// 辅助函数：格式化日期
+  // 2. 尝试从对象或数组中提取 url
+  const url = 
+    photoField.url ||                              // v5 简化格式
+    photoField?.[0]?.url ||                        // 数组格式
+    photoField?.data?.attributes?.url ||           // v4 标准格式
+    photoField?.data?.url;                         // v5 嵌套格式
+
+  return url || null;
+};
+
+// === 工具函数：日期格式化 ===
 const formatDate = (dateString?: string | null) => {
   if (!dateString) return '至今';
   try {
@@ -78,26 +43,56 @@ const formatDate = (dateString?: string | null) => {
       year: 'numeric',
       month: 'long',
     });
-  } catch (e) {
+  } catch {
     return dateString;
   }
 };
 
-// === 3. 页面组件 (Next.js 15 修正版) ===
+// === 数据获取 ===
+async function getTeacher(documentId: string): Promise<TeacherData | null> {
+  const baseUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || "http://127.0.0.1:1337";
+  
+  try {
+    const res = await fetch(`${baseUrl}/api/teachers/${documentId}?populate=*`, { 
+      cache: 'no-store', // 确保获取最新数据
+    });
 
-// 定义 Props 类型：params 必须是 Promise
+    if (!res.ok) return null;
+
+    const json = await res.json();
+    const raw = json.data;
+    
+    if (!raw) return null;
+
+    // 字段映射 (兼容大小写)
+    return {
+      documentId: raw.documentId,
+      name:       raw.Name || raw.name || "未命名教师",
+      title:      raw.Title || raw.title || "",
+      photo:      getPhotoUrl(raw.Photo || raw.photo),
+      subject:    raw.Subject || raw.subject || "",
+      phone:      String(raw.Phone || raw.phone || ""),
+      teachFrom:  raw.TeachFrom || raw.teachFrom || null,
+      teachTo:    raw.TeachTo || raw.teachTo || null,
+      introduction: raw.Introduction || raw.introduction || "",
+    };
+
+  } catch (error) {
+    // 生产环境通常会接入 Sentry 等监控，这里仅做静默失败处理
+    return null;
+  }
+}
+
+// === 页面组件 ===
 type Props = {
   params: Promise<{ documentId: string }>;
 };
 
 export default async function TeacherPage({ params }: Props) {
-  // ⚠️ 关键修正：Next.js 15 中必须先 await params
+  // Next.js 15: params 必须 await
   const { documentId } = await params;
-
-  // 使用解析出来的 documentId 获取数据
   const teacher = await getTeacher(documentId);
 
-  // 如果获取不到数据，显示 404
   if (!teacher) {
     notFound();
   }
@@ -106,11 +101,12 @@ export default async function TeacherPage({ params }: Props) {
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex flex-col md:flex-row gap-8">
         
-        {/* 左侧栏: 个人资料卡 */}
+        {/* 左侧栏: 个人资料 */}
         <aside className="w-full md:w-1/3 lg:w-1/4">
-          <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-100 sticky top-8">
+          {/* sticky top-24: 距离顶部 6rem (96px)，避免被导航栏遮挡 */}
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-100 sticky top-24 transition-all duration-300">
             
-            {/* 头像区域 */}
+            {/* 头像 */}
             <div className="relative h-72 w-full bg-gray-50">
               {teacher.photo ? (
                 <img 
@@ -126,7 +122,7 @@ export default async function TeacherPage({ params }: Props) {
               )}
             </div>
 
-            {/* 信息区域 */}
+            {/* 信息列表 */}
             <div className="p-6 space-y-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">{teacher.name}</h1>
@@ -141,7 +137,7 @@ export default async function TeacherPage({ params }: Props) {
                 </div>
               )}
 
-              <div className="border-t border-gray-100 my-4"></div>
+              <div className="border-t border-gray-100 my-4" />
 
               <div className="space-y-3 text-sm">
                 {teacher.phone && (
@@ -157,7 +153,7 @@ export default async function TeacherPage({ params }: Props) {
                     <div className="flex items-center gap-2 text-gray-800 font-medium">
                       <span>{formatDate(teacher.teachFrom)}</span>
                       <span className="text-gray-400">→</span>
-                      <span>{formatDate(teacher.teachTo)}</span>
+                      <span>{teacher.teachTo ? formatDate(teacher.teachTo) : '至今'}</span>
                     </div>
                   </div>
                 )}
@@ -173,10 +169,10 @@ export default async function TeacherPage({ params }: Props) {
              
              <RichTextRenderer content={teacher.introduction} />
 
-             {(!teacher.introduction) && (
-                  <div className="text-gray-400 italic mt-8 text-center p-10 bg-gray-50 rounded-lg">
-                    暂无详细介绍...
-                  </div>
+             {!teacher.introduction && (
+                <div className="text-gray-400 italic mt-8 text-center p-10 bg-gray-50 rounded-lg">
+                  暂无详细介绍...
+                </div>
              )}
           </div>
         </main>
