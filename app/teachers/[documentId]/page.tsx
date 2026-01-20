@@ -17,7 +17,7 @@ interface TeacherData {
 
 // 2. 数据获取函数 (含详细调试日志)
 async function getTeacher(documentId: string): Promise<TeacherData | null> {
-  const baseUrl = process.env.STRAPI_API_URL || "http://127.0.0.1:1337";
+  const baseUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || "http://127.0.0.1:1337";
   
   // 关键：添加 populate=* 确保获取图片和关联字段
   const url = `${baseUrl}/api/teachers/${documentId}?populate=*`;
