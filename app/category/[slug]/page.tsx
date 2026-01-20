@@ -144,7 +144,7 @@ export default async function CategoryPage({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         {articles.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
-            {articles.map((article) => (
+            {articles.map((article: Article) => (
               <article key={article.documentId} className="group cursor-pointer flex flex-col h-full">
                 <Link href={`/article/${article.documentId}`} className="block h-full">
                   <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100 rounded-lg mb-6">
