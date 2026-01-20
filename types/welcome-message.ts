@@ -3,9 +3,7 @@
 
 // 类型定义
 type ProvinceMessages = {
-  [city: string]: string;
-  default: string;
-} | {
+  [city: string]: string;  // 添加索引签名，允许任意城市名作为键
   default: string;
 };
 
@@ -587,8 +585,8 @@ export function getWelcomeMessage(nation: string, province?: string, city?: stri
   }
   
   // 如果有城市信息，尝试获取城市特定的欢迎语
-  if (city && city in provinceData) {
-    return provinceData[city] as string;
+  if (city && provinceData[city]) {
+    return provinceData[city];
   }
   
   // 返回省份默认欢迎语
