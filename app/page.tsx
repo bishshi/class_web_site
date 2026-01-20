@@ -2,6 +2,7 @@ import HomeCarousel, { SlideItem } from '@/components/HomeCarousel';
 import NoticeBar from '@/components/NoticeBar';
 import CategorySection from '@/components/CategorySection';
 import EventTimer from '@/components/EventTimer'; 
+import WelcomeCard from '@/components/WelcomeCard';
 
 // --- 类型定义 ---
 export type UIArticle = {
@@ -24,7 +25,7 @@ type ArticleCategory = 'teacher' | 'student' | 'event' | 'special_event';
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
 const REVALIDATE_TIME = 60; 
 
-// --- 数据获取函数 (保持您的逻辑不变) ---
+// --- 数据获取函数 ---
 async function getSlides(): Promise<SlideItem[]> {
   try {
     const res = await fetch(`${STRAPI_URL}/api/slides?sort=order:asc`, { next: { revalidate: REVALIDATE_TIME } });
@@ -95,82 +96,124 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-white pb-20">
+      {/* 轮播图 */}
       <HomeCarousel slides={slides} />
+      
+      {/* 通知栏 */}
       <NoticeBar notices={notices} />
 
-      <div className={`container mx-auto px-4 mt-12 transition-all duration-300 ${hasTimer ? "max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-8" : "max-w-6xl"}`}>
-        
-        {/* 左侧主要内容区域 */}
-        <div className={`space-y-16 ${hasTimer ? "lg:col-span-9" : ""}`}>
-          <section>
-            <div className="flex items-center mb-8">
-              <div className="w-1.5 h-8 bg-red-600 rounded-full mr-3"></div>
-              <h2 className="text-3xl font-bold text-gray-900">🔥 班级热点</h2>
-            </div>
-            <div className="space-y-12">
-              <CategorySection title="特别策划" articles={specialEventData} color="bg-red-500" />
-              <CategorySection title="班级活动" articles={eventData} color="bg-orange-500" />
-            </div>
-          </section>
+      {/* 主容器 */}
+      <div className={`container mx-auto px-4 sm:px-6 lg:px-8 mt-8 lg:mt-12 ${
+        hasTimer ? "max-w-7xl" : "max-w-6xl"
+      }`}>
+        <div className={`grid gap-6 lg:gap-8 ${hasTimer ? "lg:grid-cols-12" : "lg:grid-cols-1"}`}>
+          
+          {/* ============ 左侧主内容区 ============ */}
+          <div className={`space-y-10 lg:space-y-12 ${hasTimer ? "lg:col-span-8 xl:col-span-9" : ""}`}>
+            
+            {/* 班级热点板块 */}
+            <section className="animate-fade-in">
+              {/* 简洁标题 */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-1 h-7 bg-red-500 rounded-full"></div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  🔥 班级热点
+                </h2>
+              </div>
 
-        {/* --- 人物风采 --- */}
-        <section className="bg-gray-50 p-6 md:p-10 rounded-3xl">
-          {/* 顶部标题保持一致 */}
-          <div className="flex items-center mb-12">
-            <div className="w-1.5 h-8 bg-blue-600 rounded-full mr-3"></div>
-            <h2 className="text-3xl font-bold text-gray-900">👥 人物风采</h2>
+              {/* 内容区域 - 扁平化设计 */}
+              <div className="space-y-6">
+                {/* 特别策划 */}
+                <div className="group">
+                  <CategorySection 
+                    title="特别策划" 
+                    articles={specialEventData} 
+                    color="bg-red-500" 
+                  />
+                </div>
+
+                {/* 班级活动 */}
+                <div className="group">
+                  <CategorySection 
+                    title="班级活动" 
+                    articles={eventData} 
+                    color="bg-orange-500" 
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* 人物风采板块 */}
+            <section className="animate-fade-in animation-delay-200">
+              {/* 简洁标题 */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-1 h-7 bg-blue-500 rounded-full"></div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  👥 人物风采
+                </h2>
+              </div>
+
+              {/* 内容区域 - 扁平化设计 */}
+              <div className="space-y-6">
+                {/* 师资力量 */}
+                <div className="group">
+                  <CategorySection 
+                    title="师资力量" 
+                    articles={teacherData} 
+                    color="bg-blue-500" 
+                  />
+                </div>
+
+                {/* 学生风采 */}
+                <div className="group">
+                  <CategorySection 
+                    title="学生风采" 
+                    articles={studentData} 
+                    color="bg-green-500" 
+                  />
+                </div>
+              </div>
+            </section>
           </div>
 
-          {/* 将原有的 grid-cols-2 改为垂直堆叠 (space-y-20)
-            这样每一行都能充分利用宽度，展示更多的文章简介
-          */}
-          <div className="space-y-20">
-            {/* 1. 师资力量 */}
-            <div className="relative">
-              <CategorySection 
-                title="师资力量" 
-                articles={teacherData} 
-                color="bg-blue-600" 
-              />
-              {/* 装饰性底线，增加板块间的呼吸感 */}
-              <div className="absolute -bottom-10 left-0 w-full h-px bg-gray-200/60"></div>
-            </div>
+          {/* ============ 右侧边栏 ============ */}
+          {hasTimer && (
+            <aside className={`${hasTimer ? "lg:col-span-4 xl:col-span-3" : "hidden"}`}>
+              <div className="sticky top-20 lg:top-24 space-y-4">
+                <div className="animate-fade-in">
+                  <WelcomeCard />
+                </div>
+                {/* 计时器列表 */}
+                {timers.map((timer, index) => (
+                  <div 
+                    key={timer.id}
+                    className="animate-fade-in"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <EventTimer 
+                      title={timer.title} 
+                      targetTime={timer.targetTime}
+                      isSpecial={timer.isSpecial}
+                    />
+                  </div>
+                ))}
 
-            {/* 2. 学生风采 */}
-            <div>
-              <CategorySection 
-                title="学生风采" 
-                articles={studentData} 
-                color="bg-green-600" 
-              />
-            </div>
-          </div>
-        </section>
+                {/* 底部提示 */}
+                <div className="bg-white rounded-xl p-5 border border-slate-200/60 shadow-sm">
+                  <div className="text-center">
+                    <div className="text-2xl mb-2">📌</div>
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      关注班级动态<br />
+                      不错过精彩时刻
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          )}
         </div>
-
-        {/* --- 右侧边栏区域 --- */}
-        {hasTimer && (
-          <aside className="hidden lg:block lg:col-span-3">
-            {/* 【关键修复】：
-              1. sticky top-24 控制整个侧边栏整体粘停。
-              2. space-y-6 确保多个计时器之间有间隔且不会重叠。
-            */}
-            <div className="sticky top-24 space-y-6">
-               {timers.map((timer) => (
-                 <EventTimer 
-                   key={timer.id} 
-                   title={timer.title} 
-                   targetTime={timer.targetTime}
-                   isSpecial={timer.isSpecial}
-                 />
-               ))}
-               <div className="p-4 text-center text-xs text-slate-400 border-t border-slate-100 pt-4">
-                 关注班级动态，不错过精彩时刻
-               </div>
-            </div>
-          </aside>
-        )}
       </div>
+
     </main>
   );
 }
