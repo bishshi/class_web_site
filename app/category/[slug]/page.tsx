@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 // -----------------------------------------------------------------------------
 const CATEGORY_CONFIG: Record<string, { label: string; color: string; desc: string }> = {
   "Teacher": {
-    label: "教师风采",
+    label: "师资力量",
     color: "bg-purple-100 text-purple-800",
     desc: "名师荟萃，匠心育人"
   },
@@ -17,28 +17,28 @@ const CATEGORY_CONFIG: Record<string, { label: string; color: string; desc: stri
     desc: "青春飞扬，无限可能"
   },
   "Event": {
-    label: "校园活动",
+    label: "班级活动",
     color: "bg-amber-100 text-amber-800",
     desc: "多彩生活，实践真知"
   },
   "SpecialEvent": {
-    label: "特别企划",
+    label: "特别策划",
     color: "bg-red-100 text-red-800",
     desc: "聚焦热点，深度报道"
   },
 };
 
 // -----------------------------------------------------------------------------
-// 2. 类型定义 (已更新)
+// 2. 类型定义 (已更新 - 添加 isTop 字段)
 // -----------------------------------------------------------------------------
 interface Article {
   documentId: string;
   title: string;
   summary: string;
-  // 这里的类型也对应更新，确保 TS 智能提示正确
   category: "Teacher" | "Student" | "Event" | "SpecialEvent"; 
   cover: string;
   publishedAt: string;
+  isTop?: boolean; // 新增：是否置顶
 }
 
 interface StrapiResponse {
@@ -47,15 +47,16 @@ interface StrapiResponse {
 }
 
 // -----------------------------------------------------------------------------
-// 3. 数据获取函数 (Server Side)
+// 3. 数据获取函数 (Server Side) - 添加置顶排序
 // -----------------------------------------------------------------------------
 async function getArticlesByCategory(slug: string) {
   const baseUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || "http://localhost:1337";
   
-  // Next.js 会自动解码 URL 中的空格 (%20 -> " ")，所以这里的 slug 是原样的 "Special Event"
+  // 添加置顶排序：先按 isTop 降序，再按发布时间降序
   const query = new URLSearchParams({
-    "filters[category][$eq]": slug, // 精确匹配 Strapi 枚举值
-    "sort": "publishedAt:desc",
+    "filters[category][$eq]": slug,
+    "sort[0]": "isTop:desc",        // 置顶文章优先
+    "sort[1]": "publishedAt:desc",  // 时间倒序
   });
 
   try {
@@ -69,7 +70,26 @@ async function getArticlesByCategory(slug: string) {
     }
 
     const json = await res.json();
-    return json as StrapiResponse;
+    
+    // 扁平化数据结构处理 - 确保数据格式正确
+    const articles = json.data?.map((item: any) => ({
+      documentId: item.documentId,
+      title: item.title,
+      summary: item.summary,
+      category: item.category,
+      cover: item.cover,
+      publishedAt: item.publishedAt,
+      isTop: item.isTop || false, // 提取 isTop 字段
+    })) || [];
+
+    // 客户端再次排序，确保置顶文章在前
+    const sortedArticles = articles.sort((a: Article, b: Article) => {
+      if (a.isTop && !b.isTop) return -1;
+      if (!a.isTop && b.isTop) return 1;
+      return 0;
+    });
+
+    return { data: sortedArticles };
   } catch (error) {
     console.error("Fetch Error:", error);
     return { data: [] };
@@ -77,7 +97,7 @@ async function getArticlesByCategory(slug: string) {
 }
 
 // -----------------------------------------------------------------------------
-// 4. 页面组件 (Next.js 15 Server Component)
+// 4. 页面组件 (Next.js 15 Server Component) - 添加 TOP 标签显示
 // -----------------------------------------------------------------------------
 export default async function CategoryPage({
   params,
@@ -85,16 +105,13 @@ export default async function CategoryPage({
   params: Promise<{ slug: string }>;
 }) {
   // 1. 解包 params
-  // 如果 URL 是 /category/Special%20Event，这里的 slug 会自动解码为 "Special Event"
   const { slug } = await params; 
-  // 为防止 URL 编码导致的匹配问题，可以额外 decode 一次（虽然 Next.js 通常会自动处理）
   const decodedSlug = decodeURIComponent(slug);
 
   // 2. 校验分类
   const categoryInfo = CATEGORY_CONFIG[decodedSlug];
   
   if (!categoryInfo) {
-    // 如果找不到对应的配置（比如用户输入了小写的 /category/teacher），则返回 404
     notFound();
   }
 
@@ -136,6 +153,22 @@ export default async function CategoryPage({
                       alt={article.title}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
+                    
+                    {/* 置顶标签 - 显示在图片右上角 */}
+                    {article.isTop && (
+                      <div className="absolute top-3 right-3 z-10">
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-red-500 text-white shadow-lg">
+                          <svg 
+                            className="w-3.5 h-3.5" 
+                            fill="currentColor" 
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1z" />
+                          </svg>
+                          置顶
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-col flex-1">
@@ -143,6 +176,12 @@ export default async function CategoryPage({
                       <span className={`px-2 py-0.5 rounded text-[10px] uppercase tracking-wide ${categoryInfo.color}`}>
                         {categoryInfo.label}
                       </span>
+                      {/* 在标签旁也显示置顶标识（可选） */}
+                      {article.isTop && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">
+                          📌 TOP
+                        </span>
+                      )}
                       <time className="text-slate-400">
                         {new Date(article.publishedAt).toLocaleDateString('zh-CN')}
                       </time>
