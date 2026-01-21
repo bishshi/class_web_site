@@ -1,12 +1,23 @@
 'use client';
 
-import { ReactNode } from "react";
-import ReactMarkdown, { Components } from "react-markdown";
+import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 
-// 放行自定义标签
+// 1. 扩展 react-markdown 的标签类型
+declare module "react-markdown" {
+  interface Components {
+    note?: React.FC<any>;
+    warning?: React.FC<any>;
+    center?: React.FC<any>;
+    left?: React.FC<any>;
+    right?: React.FC<any>;
+  }
+}
+
+// 2. 放行自定义标签（防止被 sanitize 干掉）
 const schema = {
   ...defaultSchema,
   tagNames: [
