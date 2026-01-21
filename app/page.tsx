@@ -93,7 +93,7 @@ async function getArticlesByCategory(category: ArticleCategory): Promise<UIArtic
     })) || [];
     
     // 手动排序：置顶的在前，然后按日期排序
-    return articles.sort((a, b) => {
+    return articles.sort((a: UIArticle, b: UIArticle) => {
       if (a.isTop && !b.isTop) return -1;
       if (!a.isTop && b.isTop) return 1;
       // 如果置顶状态相同，保持原有顺序（已按 publishedAt 排序）
