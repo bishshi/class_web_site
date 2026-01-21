@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
-import SearchModal from './SearchModel';
+import FuseSearch from '@/components/Search';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,7 +54,7 @@ export default function Navbar() {
               ))}
             </div>
 
-            <SearchModal />
+            <FuseSearch />
 
             <div className="md:hidden flex items-center">
               <button
