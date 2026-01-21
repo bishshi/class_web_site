@@ -1,4 +1,4 @@
-import React from 'react';
+import { getSmartCache } from '@/lib/fetch-config';
 import { notFound } from 'next/navigation';
 import RichTextRenderer from '@/components/RichTextRenderer';
 
@@ -51,10 +51,10 @@ const formatDate = (dateString?: string | null) => {
 // === 数据获取 ===
 async function getTeacher(documentId: string): Promise<TeacherData | null> {
   const baseUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || "http://127.0.0.1:1337";
-  
+
   try {
-    const res = await fetch(`${baseUrl}/api/teachers/${documentId}?populate=*`, { 
-      cache: 'no-store', // 确保获取最新数据
+    const res = await fetch(`${baseUrl}/api/teachers/${documentId}?populate=*`, {
+      ...getSmartCache()
     });
 
     if (!res.ok) return null;

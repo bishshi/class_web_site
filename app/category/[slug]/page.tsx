@@ -1,3 +1,4 @@
+import { getSmartCache } from "@/lib/fetch-config";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -61,7 +62,7 @@ async function getArticlesByCategory(slug: string) {
 
   try {
     const res = await fetch(`${baseUrl}/api/articles?${query.toString()}`, {
-      cache: "no-store", 
+      ...getSmartCache()
     });
 
     if (!res.ok) {

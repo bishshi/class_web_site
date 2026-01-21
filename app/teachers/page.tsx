@@ -1,4 +1,4 @@
-import React from 'react';
+import { getSmartCache } from '@/lib/fetch-config';
 import Link from 'next/link';
 
 // --- 1. 定义接口 ---
@@ -16,7 +16,7 @@ async function getTeachers(): Promise<TeacherSummary[]> {
   
   try {
     const res = await fetch(`${baseUrl}/api/teachers`, { 
-      cache: 'no-store', 
+      ...getSmartCache()
     });
 
     if (!res.ok) {

@@ -1,3 +1,4 @@
+import { getSmartCache } from "@/lib/fetch-config";
 import { notFound } from "next/navigation";
 import { Calendar, Tag, ArrowLeft, Clock } from "lucide-react";
 import Link from "next/link";
@@ -21,7 +22,7 @@ async function getArticle(documentId: string): Promise<Article | null> {
   const baseUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || "http://localhost:1337";
   try {
     const res = await fetch(`${baseUrl}/api/articles/${documentId}?populate=*`, {
-      next: { revalidate: 60 },
+      ...getSmartCache(),
     });
     if (!res.ok) return null;
     const json = await res.json();

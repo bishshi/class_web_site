@@ -1,3 +1,4 @@
+import { getSmartCache } from '@/lib/fetch-config';
 import { BlocksRenderer } from '@strapi/blocks-react-renderer';
 import { notFound } from 'next/navigation';
 import { Student } from '@/types/student';
@@ -6,7 +7,7 @@ import { Student } from '@/types/student';
 async function getStudent(documentId: string) {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_STRAPI_API_URL}/api/students/${documentId}`,
-    { cache: 'no-store' }
+    { ...getSmartCache(), }
   );
   
   if (!res.ok) return null;
