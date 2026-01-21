@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar"; // 引入组件
+import Navbar from "@/components/Navbar";
 import packageJson from "../package.json";
-import CustomContextMenu from '@/components/CustomContextMenu'
+import CustomContextMenu from '@/components/CustomContextMenu';
+import TypebotBubble from '@/components/TypebotBubble'; // 引入 Typebot
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,18 +22,21 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body className={inter.className}>
         <CustomContextMenu>
-        {/* 1. 放在这里，所有页面都会有导航条 */}
-        <Navbar /> 
-        
-        {/* 2. 页面具体内容 */}
-        {children}
-        
-        {/* 3. 你也可以在这里加一个 Footer 脚注 */}
-        <footer className="bg-gray-50 text-center py-8 text-gray-400 text-sm mt-10">
-          © 2026  Class 612 Website. Powered by BI. Using Next.js & Strapi.<br />
-          Version: {packageJson.version} 
-        </footer>
+          {/* 1. 放在这里，所有页面都会有导航条 */}
+          <Navbar /> 
+          
+          {/* 2. 页面具体内容 */}
+          {children}
+          
+          {/* 3. 你也可以在这里加一个 Footer 脚注 */}
+          <footer className="bg-gray-50 text-center py-8 text-gray-400 text-sm mt-10">
+            © 2026  Class 612 Website. Powered by BI. Using Next.js & Strapi.<br />
+            Version: {packageJson.version} 
+          </footer>
         </CustomContextMenu>
+        
+        {/* 4. Typebot 反馈气泡 */}
+        <TypebotBubble />
       </body>
     </html>
   );

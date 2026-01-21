@@ -25,7 +25,6 @@ export default function Navbar() {
     { name: '特别策划', href: '/category/SpecialEvent' },
     { name: '学生档案', href: '/students' },
     { name: '师资力量', href: '/teachers' },
-    { name: '问卷调查', href: '/survey' },
     { name: '联系我们', href: '/contact' },
   ];
 
