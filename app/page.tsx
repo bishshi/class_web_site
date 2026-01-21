@@ -117,7 +117,7 @@ async function getTimers(): Promise<TimerData[]> {
 
 async function getTeacherProfiles(): Promise<TeacherProfile[]> {
   try {
-    const res = await fetch(`${STRAPI_URL}/api/teachers?pagination[pageSize]=4&sort[0]=createdAt:asc`, { next: { revalidate: REVALIDATE_TIME } });
+    const res = await fetch(`${STRAPI_URL}/api/teachers?pagination[pageSize]=8&sort[0]=createdAt:asc`, { next: { revalidate: REVALIDATE_TIME } });
     const json = await res.json();
     return json.data?.map((item: any) => ({
       id: item.id,
@@ -132,7 +132,7 @@ async function getTeacherProfiles(): Promise<TeacherProfile[]> {
 
 async function getStudentProfiles(): Promise<StudentProfile[]> {
   try {
-    const res = await fetch(`${STRAPI_URL}/api/students?pagination[pageSize]=4&sort[0]=createdAt:asc&fields[0]=Name&fields[1]=Photo&fields[2]=location&fields[3]=documentId`, { next: { revalidate: REVALIDATE_TIME } });
+    const res = await fetch(`${STRAPI_URL}/api/students?pagination[pageSize]=8&sort[0]=createdAt:asc&fields[0]=Name&fields[1]=Photo&fields[2]=location&fields[3]=documentId`, { next: { revalidate: REVALIDATE_TIME } });
     const json = await res.json();
     return json.data?.map((item: any) => ({
       id: item.id,
