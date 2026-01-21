@@ -21,6 +21,9 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // 👇 在这里添加插件
+    require('@tailwindcss/typography'), 
+  ],
 };
 export default config;

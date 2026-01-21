@@ -12,6 +12,7 @@ export type UIArticle = {
   title: string;
   summary: string;
   date: string;
+  isTop?: boolean; // 新增：是否置顶
 };
 
 export type TeacherProfile = {
@@ -46,14 +47,18 @@ const REVALIDATE_TIME = 3600; // 1 hour
 // --- 数据获取函数 ---
 async function getSlides(): Promise<SlideItem[]> {
   try {
-    const res = await fetch(`${STRAPI_URL}/api/slides?sort=order:asc`, { next: { revalidate: REVALIDATE_TIME } });
+    // 添加 isShow 过滤条件
+    const res = await fetch(
+      `${STRAPI_URL}/api/slides?filters[isShow][$eq]=true&sort=order:asc`, 
+      { next: { revalidate: REVALIDATE_TIME } }
+    );
     const json = await res.json();
     return json.data?.map((item: any) => ({
       id: item.id,
       documentId: item.documentId,
-      title: item.attributes?.title || item.title,
-      imageUrl: item.attributes?.image || item.image || '/images/placeholder.jpg',
-      link: item.attributes?.link || item.link || null,
+      title: item.title,
+      imageUrl: item.image || '/images/placeholder.jpg',
+      link: item.link || null,
     })) || [];
   } catch (error) { return []; }
 }
@@ -62,7 +67,7 @@ async function getNotices(): Promise<string[]> {
   try {
     const res = await fetch(`${STRAPI_URL}/api/notices?sort[0]=createdAt:desc&filters[isShow][$eq]=true`, { next: { revalidate: REVALIDATE_TIME } });
     const json = await res.json();
-    return json.data?.map((item: any) => (item.attributes || item).content) || [];
+    return json.data?.map((item: any) => item.content) || [];
   } catch (error) { return []; }
 }
 
@@ -70,18 +75,30 @@ async function getArticlesByCategory(category: ArticleCategory): Promise<UIArtic
   try {
     const query = new URLSearchParams({
       'filters[category][$eq]': category,
-      'sort[0]': 'publishedAt:desc',
+      'sort[0]': 'isTop:desc',        // 先按置顶排序
+      'sort[1]': 'publishedAt:desc',  // 再按发布时间排序
       'pagination[pageSize]': '6'
     });
     const res = await fetch(`${STRAPI_URL}/api/articles?${query.toString()}`, { next: { revalidate: REVALIDATE_TIME } });
     const json = await res.json();
-    return json.data?.map((item: any) => ({
+    
+    const articles = json.data?.map((item: any) => ({
       id: item.id,
       documentId: item.documentId,
-      title: item.attributes?.title || item.title,
-      summary: item.attributes?.summary || item.summary,
-      date: new Date(item.attributes?.publishedAt || item.publishedAt).toLocaleDateString('zh-CN'),
+      // Strapi v5 使用扁平化结构，字段直接在 item 上
+      title: item.title,
+      summary: item.summary,
+      date: new Date(item.publishedAt).toLocaleDateString('zh-CN'),
+      isTop: item.isTop || false, // 直接从 item 读取，不需要 attributes
     })) || [];
+    
+    // 手动排序：置顶的在前，然后按日期排序
+    return articles.sort((a, b) => {
+      if (a.isTop && !b.isTop) return -1;
+      if (!a.isTop && b.isTop) return 1;
+      // 如果置顶状态相同，保持原有顺序（已按 publishedAt 排序）
+      return 0;
+    });
   } catch (error) { return []; }
 }
 
@@ -91,9 +108,9 @@ async function getTimers(): Promise<TimerData[]> {
     const json = await res.json();
     return json.data?.map((item: any) => ({
       id: item.id,
-      title: item.attributes?.title || item.Title || item.title || "Event",
-      targetTime: item.attributes?.targetTime || item.targetTime,
-      isSpecial: item.attributes?.isSpecial || item.isSpecial || false,
+      title: item.title || "Event",
+      targetTime: item.targetTime,
+      isSpecial: item.isSpecial || false,
     })) || [];
   } catch (error) { return []; }
 }
@@ -105,10 +122,10 @@ async function getTeacherProfiles(): Promise<TeacherProfile[]> {
     return json.data?.map((item: any) => ({
       id: item.id,
       documentId: item.documentId,
-      name: item.Name || item.attributes?.Name,
-      title: item.Title || item.attributes?.Title,
-      photoUrl: item.Photo || item.attributes?.Photo || '',
-      subject: item.Subject || item.attributes?.Subject,
+      name: item.Name,
+      title: item.Title,
+      photoUrl: item.Photo || '',
+      subject: item.Subject,
     })) || [];
   } catch (error) { return []; }
 }
@@ -120,9 +137,9 @@ async function getStudentProfiles(): Promise<StudentProfile[]> {
     return json.data?.map((item: any) => ({
       id: item.id,
       documentId: item.documentId,
-      name: item.Name || item.attributes?.Name,
-      location: item.location || item.attributes?.location,
-      photoUrl: item.Photo || item.attributes?.Photo || '',
+      name: item.Name,
+      location: item.location,
+      photoUrl: item.Photo || '',
     })) || [];
   } catch (error) { return []; }
 }
@@ -278,7 +295,7 @@ export default async function HomePage() {
                 {/* 子项2：教师风采 */}
                 <div className="group">
                   <CategorySection 
-                    title="教师风采" 
+                    title="师资力量" 
                     articles={teacherArticleData} 
                     color="bg-blue-500" 
                   />
