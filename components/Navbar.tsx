@@ -120,7 +120,7 @@ export default function Navbar() {
     { name: '班级活动', href: '/category/Event' },
     { name: '特别策划', href: '/category/SpecialEvent' },
     { name: '学生档案', href: '/students' },
-    { name: '师资力量', href: '/teachers' },
+    { name: '教师档案', href: '/teachers' },
     { name: '联系我们', href: '/contact' },
   ];
 

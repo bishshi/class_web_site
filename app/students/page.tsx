@@ -60,7 +60,7 @@ export default function StudentListPage() {
     return (
       <div className="max-w-7xl mx-auto px-6 py-12">
         <header className="mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">学子风采</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">学生档案</h1>
         </header>
         <div className="flex flex-col items-center justify-center min-h-[400px] bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-8 text-center">
           <h2 className="text-2xl font-bold text-gray-800 mb-2">权限受限</h2>

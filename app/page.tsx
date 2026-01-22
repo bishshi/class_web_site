@@ -237,7 +237,7 @@ export default async function HomePage() {
                   <CategorySection title="学生风采" articles={studentArticleData} color="bg-green-500" />
                 </div>
                 <div className="group">
-                  <CategorySection title="师资力量" articles={teacherArticleData} color="bg-blue-500" />
+                  <CategorySection title="教师风采" articles={teacherArticleData} color="bg-blue-500" />
                 </div>
               </div>
             </section>
