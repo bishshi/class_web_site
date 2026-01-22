@@ -355,7 +355,7 @@ export default async function HomePage() {
 
           {/* ============ 右侧边栏 (保持原样) ============ */}
           {hasTimer && (
-            <aside className={`${hasTimer ? "lg:col-span-4 xl:col-span-3" : "hidden"}`}>
+            <aside className={`${hasTimer ? "hidden lg:block lg:col-span-4 xl:col-span-3" : "hidden"}`}>
               <div className="sticky top-20 lg:top-20 space-y-4">
                 <div className="animate-fade-in"><WelcomeCard /></div>
                 {timers.map((timer, index) => (

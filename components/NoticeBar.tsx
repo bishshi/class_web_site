@@ -10,8 +10,12 @@ export default function NoticeBar({ notices }: NoticeBarProps) {
   const isSingle = displayNotices.length === 1;
 
   return (
-    <div className="w-full bg-yellow-50 border-y border-yellow-100 h-10 flex items-center overflow-hidden">
+    // 修改点：添加 'relative z-0'
+    // 这将限制内部元素的 z-index 作用域，防止它们遮挡外部组件（如 Navbar）
+    <div className="w-full bg-yellow-50 border-y border-yellow-100 h-10 flex items-center overflow-hidden relative z-0">
+      
       {/* 1. 左侧固定标签 */}
+      {/* 这里的 z-10 现在只在 NoticeBar 内部有效，用来压住右边的滚动文字，不会再挡住 Navbar 了 */}
       <div className="flex-shrink-0 px-4 flex items-center text-yellow-700 font-bold z-10 bg-yellow-50 h-full shadow-[4px_0_10px_rgba(254,249,195,1)]">
         <Megaphone size={16} className="mr-2" />
         <span className="text-sm whitespace-nowrap">公告</span>
@@ -35,8 +39,7 @@ export default function NoticeBar({ notices }: NoticeBarProps) {
             ))}
           </div>
           
-          {/* 第二组内容：仅在需要滚动时发挥作用（移动端或多条公告时） */}
-          {/* lg:hidden 指的是在电脑端如果只有一条公告，就彻底隐藏第二组，防止看到重复 */}
+          {/* 第二组内容 */}
           <div className={`flex items-center ${isSingle ? 'lg:hidden' : ''}`}>
             {displayNotices.map((notice, idx) => (
               <span key={`b-${idx}`} className="mx-6 lg:mx-10 text-sm text-gray-700 font-medium">
