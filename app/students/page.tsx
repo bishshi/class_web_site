@@ -13,7 +13,7 @@ export default function StudentListPage() {
   // 【新增】分页状态
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
-  const pageSize = 15; // 每页显示 15 个
+  const pageSize = 12; // 每页显示 12 个
 
   useEffect(() => {
     const loggedIn = isAuthenticated();
@@ -25,13 +25,13 @@ export default function StudentListPage() {
     } else {
       setLoading(false);
     }
-  }, [page]); // 【修改】依赖项加入 page，当页码改变自动触发请求
+  }, [page]); // 依赖项加入 page，当页码改变自动触发请求
 
   const fetchStudents = async (currentPage: number) => {
     setLoading(true); // 翻页时也显示加载状态
     try {
       const token = localStorage.getItem('token');
-      // 【修改】添加 pagination[page] 和 pagination[pageSize] 参数
+
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_STRAPI_API_URL}/api/students?fields[0]=Name&fields[1]=Photo&fields[2]=location&fields[3]=documentId&pagination[page]=${currentPage}&pagination[pageSize]=${pageSize}`,
         {
@@ -45,7 +45,7 @@ export default function StudentListPage() {
       if (res.ok) {
         const json = await res.json();
         setStudents(json.data || []);
-        // 【新增】从 Strapi 的 meta 数据中获取总页数
+
         if (json.meta && json.meta.pagination) {
           setPageCount(json.meta.pagination.pageCount);
         }
@@ -57,7 +57,7 @@ export default function StudentListPage() {
     }
   };
 
-  // 【新增】处理翻页并滚动到顶部
+
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pageCount) {
       setPage(newPage);
@@ -136,7 +136,7 @@ export default function StudentListPage() {
         </div>
       )}
 
-      {/* 【新增】分页控制器 */}
+      {/* 分页控制器 */}
       {pageCount > 1 && (
         <div className="mt-16 flex justify-center items-center gap-4">
           <button

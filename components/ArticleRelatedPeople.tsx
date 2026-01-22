@@ -11,11 +11,11 @@ interface Person {
   name: string;
   photoUrl?: string;
   location?: string;
-  title?: string; // 教师职称
+  title?: string;
 }
 
 interface RelatedPeopleProps {
-  relatedPerson: string; // 格式: "teacher:abc123\nstudent:xyz789\nteacher:ALL"
+  relatedPerson?: string;
 }
 
 // ============================================================================
@@ -63,27 +63,28 @@ const PersonCard = ({
 };
 
 // ============================================================================
-// "全体"占位卡片
+// "全体"占位卡片（横向样式，与文章卡片对齐）
 // ============================================================================
 const AllPeopleCard = ({ type }: { type: 'teacher' | 'student' }) => {
   const href = type === 'teacher' ? '/teachers' : '/students';
   const label = type === 'teacher' ? '全体教师' : '全体学生';
   const icon = type === 'teacher' ? '👨‍🏫' : '👨‍🎓';
+  const bgColor = type === 'teacher' ? 'from-blue-50 to-indigo-100' : 'from-emerald-50 to-green-100';
+  const borderColor = type === 'teacher' ? 'border-blue-300' : 'border-emerald-300';
+  const textColor = type === 'teacher' ? 'text-blue-600' : 'text-emerald-600';
   
   return (
     <Link href={href} className="group block">
-      <div className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-indigo-100 mb-3 relative border-2 border-dashed border-blue-300">
-        <div className="w-full h-full flex flex-col items-center justify-center">
-          <div className="text-6xl mb-2 group-hover:scale-110 transition-transform">
+      <div className={`w-full overflow-hidden rounded-xl bg-gradient-to-br ${bgColor} p-8 relative border-2 border-dashed ${borderColor} hover:shadow-md transition-all duration-300`}>
+        <div className="flex items-center justify-center gap-4">
+          <div className="text-5xl group-hover:scale-110 transition-transform">
             {icon}
           </div>
-          <p className="text-blue-600 font-bold text-lg">{label}</p>
+          <div>
+            <h3 className={`text-2xl font-bold ${textColor} mb-1`}>{label}</h3>
+            <p className="text-gray-500 text-sm">点击查看全部 →</p>
+          </div>
         </div>
-      </div>
-      <div>
-        <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors text-center">
-          {label}
-        </h3>
       </div>
     </Link>
   );
@@ -99,16 +100,16 @@ export default function ArticleRelatedPeople({ relatedPerson }: RelatedPeoplePro
   const [showAllStudents, setShowAllStudents] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [hasStudentRefs, setHasStudentRefs] = useState(false);
 
   useEffect(() => {
-    // 检查登录状态
+    // 检查是否登录
     const checkLogin = typeof window !== 'undefined' && !!localStorage.getItem('token');
     setIsLoggedIn(checkLogin);
     
     parseAndFetchPeople(checkLogin);
   }, [relatedPerson]);
 
-  // 解析 relatedPerson 字段并获取数据
   const parseAndFetchPeople = async (loggedIn: boolean) => {
     if (!relatedPerson || !relatedPerson.trim()) {
       setLoading(false);
@@ -116,11 +117,6 @@ export default function ArticleRelatedPeople({ relatedPerson }: RelatedPeoplePro
     }
 
     try {
-      // 重置状态
-      setShowAllTeachers(false);
-      setShowAllStudents(false);
-      
-      // 按行分割
       const lines = relatedPerson.split('\n').map(line => line.trim()).filter(line => line);
       
       const teacherIds: string[] = [];
@@ -147,24 +143,20 @@ export default function ArticleRelatedPeople({ relatedPerson }: RelatedPeoplePro
         }
       });
 
-      // 更新 ALL 状态
       setShowAllTeachers(hasAllTeachers);
       setShowAllStudents(hasAllStudents);
+      setHasStudentRefs(hasAllStudents || studentIds.length > 0);
 
-      // 如果已登录，才获取数据
-      if (loggedIn && (teacherIds.length > 0 || studentIds.length > 0)) {
-        // 并行获取数据
-        const [teacherData, studentData] = await Promise.all([
-          fetchTeachers(teacherIds),
-          fetchStudents(studentIds)
-        ]);
-
+      // 教师数据：无论是否登录都可以获取（公开）
+      if (teacherIds.length > 0) {
+        const teacherData = await fetchTeachers(teacherIds);
         setTeachers(teacherData);
+      }
+
+      // 学生数据：只有登录后才获取
+      if (loggedIn && studentIds.length > 0) {
+        const studentData = await fetchStudents(studentIds);
         setStudents(studentData);
-      } else if (!loggedIn) {
-        // 未登录时也要清空数据
-        setTeachers([]);
-        setStudents([]);
       }
     } catch (error) {
       console.error('Failed to parse and fetch related people:', error);
@@ -173,25 +165,17 @@ export default function ArticleRelatedPeople({ relatedPerson }: RelatedPeoplePro
     }
   };
 
-  // 获取教师数据
+  // 获取教师数据（公开，无需权限）
   const fetchTeachers = async (documentIds: string[]): Promise<Person[]> => {
     if (documentIds.length === 0) return [];
 
     try {
-      const token = localStorage.getItem('token');
-      
-      // 构建过滤查询 (根据 documentId)
       const filters = documentIds.map((id, index) => 
         `filters[$or][${index}][documentId][$eq]=${id}`
       ).join('&');
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_STRAPI_API_URL}/api/teachers?${filters}&populate=*`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
+        `${process.env.NEXT_PUBLIC_STRAPI_API_URL}/api/teachers?${filters}&populate=*`
       );
 
       if (res.ok) {
@@ -210,7 +194,7 @@ export default function ArticleRelatedPeople({ relatedPerson }: RelatedPeoplePro
     return [];
   };
 
-  // 获取学生数据
+  // 获取学生数据（需要登录权限）
   const fetchStudents = async (documentIds: string[]): Promise<Person[]> => {
     if (documentIds.length === 0) return [];
 
@@ -245,10 +229,10 @@ export default function ArticleRelatedPeople({ relatedPerson }: RelatedPeoplePro
     return [];
   };
 
-  // 检查是否有任何引用（无论登录状态）
-  const hasAnyReferences = showAllTeachers || showAllStudents || teachers.length > 0 || students.length > 0;
+  // 检查是否有任何内容需要显示
+  const hasAnyContent = showAllTeachers || teachers.length > 0 || hasStudentRefs;
   
-  if (!loading && !hasAnyReferences) {
+  if (!loading && !hasAnyContent) {
     return null;
   }
 
@@ -260,55 +244,74 @@ export default function ArticleRelatedPeople({ relatedPerson }: RelatedPeoplePro
     );
   }
 
-  // 未登录时显示锁定状态
-  if (!isLoggedIn && hasAnyReferences) {
-    return (
-      <div className="mt-12 pt-8 border-t-2 border-gray-100">
-        <div className="relative bg-gray-50 rounded-xl p-8 border-2 border-dashed border-gray-200 text-center h-[300px] flex flex-col items-center justify-center">
-          <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-            <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-bold text-gray-700 mb-2">相关人员信息仅限内部访问</h3>
-          <p className="text-gray-500 mb-6">请登录后查看教师和学生详细信息</p>
-          <Link href="/login" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md">
-            去登录
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="mt-12 pt-8 border-t-2 border-gray-100">
-      {/* 相关教师 */}
+      {/* 相关教师 - 始终显示（如果有引用） */}
       {(teachers.length > 0 || showAllTeachers) && (
         <div className="mb-10">
           <div className="flex items-center mb-6 border-l-4 border-blue-500 pl-4">
             <h3 className="text-xl font-bold text-gray-800">👨‍🏫 相关教师</h3>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {showAllTeachers && <AllPeopleCard type="teacher" />}
-            {teachers.map(teacher => (
-              <PersonCard key={teacher.documentId} person={teacher} type="teacher" />
-            ))}
-          </div>
+          
+          {/* 全体教师卡片（独占一行） */}
+          {showAllTeachers && (
+            <div className="mb-6">
+              <AllPeopleCard type="teacher" />
+            </div>
+          )}
+          
+          {/* 具体教师卡片（网格布局） */}
+          {teachers.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+              {teachers.map(teacher => (
+                <PersonCard key={teacher.documentId} person={teacher} type="teacher" />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* 相关学生 */}
-      {(students.length > 0 || showAllStudents) && (
+      {/* 相关学生 - 未登录显示锁定，登录后显示卡片 */}
+      {hasStudentRefs && (
         <div>
           <div className="flex items-center mb-6 border-l-4 border-emerald-500 pl-4">
             <h3 className="text-xl font-bold text-gray-800">🎓 相关学生</h3>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {showAllStudents && <AllPeopleCard type="student" />}
-            {students.map(student => (
-              <PersonCard key={student.documentId} person={student} type="student" />
-            ))}
-          </div>
+          
+          {!isLoggedIn ? (
+            // 未登录：显示锁定遮罩
+            <div className="relative bg-gray-50 rounded-xl p-8 border-2 border-dashed border-gray-200 text-center h-[300px] flex flex-col items-center justify-center">
+              <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-700 mb-2">学生档案仅限内部访问</h3>
+              <p className="text-gray-500 mb-6">请登录后查看详细班级成员信息</p>
+              <Link href="/login" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+                去登录
+              </Link>
+            </div>
+          ) : (
+            // 已登录：显示学生卡片
+            <>
+              {/* 全体学生卡片（独占一行） */}
+              {showAllStudents && (
+                <div className="mb-6">
+                  <AllPeopleCard type="student" />
+                </div>
+              )}
+              
+              {/* 具体学生卡片（网格布局） */}
+              {students.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                  {students.map(student => (
+                    <PersonCard key={student.documentId} person={student} type="student" />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>

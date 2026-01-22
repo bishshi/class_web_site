@@ -82,7 +82,7 @@ async function getArticlesByCategory(slug: string, page: number = 1) {
       return 0;
     });
 
-    // 【修改】返回 meta 数据
+    // 返回 meta 数据
     return { data: sortedArticles, meta: json.meta as Meta };
   } catch (error) {
     console.error("Fetch Error:", error);
@@ -113,7 +113,7 @@ export default async function CategoryPage({
     notFound();
   }
 
-  // 【修改】传入 currentPage
+  // 传入 currentPage
   const { data: articles, meta } = await getArticlesByCategory(decodedSlug, currentPage);
   const totalPages = meta?.pagination.pageCount || 1;
 
