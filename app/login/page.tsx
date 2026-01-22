@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { LoginResponse, StrapiError } from '@/types/auth';
+import { isAuthenticated } from '@/lib/auth';
 import './login.css';
 
 export default function Login() {
@@ -12,6 +13,14 @@ export default function Login() {
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // 检查是否已登录，如果已登录则直接跳转
+  useEffect(() => {
+    if (isAuthenticated()) {
+      const redirect = searchParams.get('redirect') || '/members';
+      router.push(redirect);
+    }
+  }, [router, searchParams]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -42,8 +51,9 @@ export default function Login() {
         
         // 获取redirect参数，如果没有则默认跳转到 /members
         const redirect = searchParams.get('redirect') || '/members';
-        router.push(redirect);
-        router.refresh();
+        
+        // 刷新页面后跳转
+        window.location.href = redirect;
       } else {
         const errorData = data as StrapiError;
         const errorMessage = errorData.error?.message || '登录失败，请检查用户名和密码';
@@ -55,6 +65,33 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  // 如果已登录，显示加载状态
+  if (isAuthenticated()) {
+    return (
+      <div className="login-container">
+        <div className="login-background">
+          <div className="blob blob-1"></div>
+          <div className="blob blob-2"></div>
+          <div className="blob blob-3"></div>
+        </div>
+        <div className="login-card">
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '4px solid #e2e8f0',
+              borderTopColor: '#667eea',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+              margin: '0 auto 16px'
+            }}></div>
+            <p style={{ color: '#64748b' }}>已登录，正在跳转...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="login-container">
