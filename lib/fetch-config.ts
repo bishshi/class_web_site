@@ -2,9 +2,9 @@
 
 /**
  * 获取智能缓存配置
- * @param seconds 生产环境下的缓存时间（秒），默认 1 小时 (3600秒)
+ * @param seconds 生产环境下的缓存时间（秒），默认 3 分钟 (180秒)
  */
-export function getSmartCache(seconds: number = 3600): RequestInit {
+export function getSmartCache(seconds: number = 180): RequestInit {
   const isDev = process.env.NODE_ENV === 'development';
 
   if (isDev) {

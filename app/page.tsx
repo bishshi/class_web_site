@@ -47,7 +47,7 @@ export type TimerData = {
 type ArticleCategory = 'Teacher' | 'Student' | 'Event' | 'SpecialEvent';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
-const REVALIDATE_TIME = 3600; // 1 hour
+const REVALIDATE_TIME = 180;
 
 // --- 数据获取函数 ---
 async function getSlides(): Promise<SlideItem[]> {
