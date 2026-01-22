@@ -9,23 +9,31 @@ export default function StudentListPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  // 【新增】分页状态
+  const [page, setPage] = useState(1);
+  const [pageCount, setPageCount] = useState(1);
+  const pageSize = 15; // 每页显示 15 个
 
   useEffect(() => {
     const loggedIn = isAuthenticated();
     setIsLoggedIn(loggedIn);
 
     if (loggedIn) {
-      fetchStudents();
+      // 当登录状态确认且页码变化时，获取数据
+      fetchStudents(page);
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [page]); // 【修改】依赖项加入 page，当页码改变自动触发请求
 
-  const fetchStudents = async () => {
+  const fetchStudents = async (currentPage: number) => {
+    setLoading(true); // 翻页时也显示加载状态
     try {
       const token = localStorage.getItem('token');
+      // 【修改】添加 pagination[page] 和 pagination[pageSize] 参数
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_STRAPI_API_URL}/api/students?fields[0]=Name&fields[1]=Photo&fields[2]=location&fields[3]=documentId`,
+        `${process.env.NEXT_PUBLIC_STRAPI_API_URL}/api/students?fields[0]=Name&fields[1]=Photo&fields[2]=location&fields[3]=documentId&pagination[page]=${currentPage}&pagination[pageSize]=${pageSize}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -37,6 +45,10 @@ export default function StudentListPage() {
       if (res.ok) {
         const json = await res.json();
         setStudents(json.data || []);
+        // 【新增】从 Strapi 的 meta 数据中获取总页数
+        if (json.meta && json.meta.pagination) {
+          setPageCount(json.meta.pagination.pageCount);
+        }
       }
     } catch (error) {
       console.error('Error:', error);
@@ -45,12 +57,20 @@ export default function StudentListPage() {
     }
   };
 
-  if (loading) {
+  // 【新增】处理翻页并滚动到顶部
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pageCount) {
+      setPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  if (loading && page === 1) { // 仅在首次加载或硬刷新时显示全屏骨架屏
     return (
       <div className="max-w-7xl mx-auto px-6 py-12 animate-pulse">
         <header className="mb-12"><div className="h-10 bg-gray-200 rounded w-48 mb-4"></div></header>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {[1,2,3,4].map(i => <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>)}
+          {[...Array(8)].map((_, i) => <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>)}
         </div>
       </div>
     );
@@ -73,37 +93,81 @@ export default function StudentListPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-12 animate-fade-in">
-      <header className="mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">学子风采</h1>
-        <p className="text-gray-500">认识我们要改变世界的未来之星</p>
+      <header className="mb-12 flex justify-between items-end">
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">学子风采</h1>
+          <p className="text-gray-500">认识我们要改变世界的未来之星</p>
+        </div>
+        <div className="text-sm text-gray-400">
+          第 {page} 页 / 共 {pageCount} 页
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12">
-        {students.map((student) => (
-          <Link href={`/students/${student.documentId}`} key={student.documentId} className="group block">
-            <div className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-gray-100 mb-4 relative shadow-sm hover:shadow-md transition-shadow">
-              {/* 【修改处】直接使用 student.Photo 字符串 */}
-              {student.Photo ? (
-                <img 
-                  src={student.Photo} 
-                  alt={student.Name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50">
-                  <span className="text-4xl mb-2">🎓</span>
-                </div>
-              )}
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{student.Name}</h3>
-              {student.location && (
-                <p className="text-sm text-gray-500 mt-1 flex items-center"><span className="mr-1">📍</span> {student.location}</p>
-              )}
-            </div>
-          </Link>
-        ))}
-      </div>
+      {loading ? (
+        // 翻页时的轻量级 Loading (保留头部，只刷列表区域)
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 opacity-50">
+           {[...Array(4)].map((_, i) => <div key={i} className="h-64 bg-gray-100 rounded-xl animate-pulse"></div>)}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12">
+          {students.map((student) => (
+            <Link href={`/students/${student.documentId}`} key={student.documentId} className="group block">
+              <div className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-gray-100 mb-4 relative shadow-sm hover:shadow-md transition-shadow">
+                {student.Photo ? (
+                  <img 
+                    src={student.Photo} 
+                    alt={student.Name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50">
+                    <span className="text-4xl mb-2">🎓</span>
+                  </div>
+                )}
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{student.Name}</h3>
+                {student.location && (
+                  <p className="text-sm text-gray-500 mt-1 flex items-center"><span className="mr-1">📍</span> {student.location}</p>
+                )}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* 【新增】分页控制器 */}
+      {pageCount > 1 && (
+        <div className="mt-16 flex justify-center items-center gap-4">
+          <button
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page === 1 || loading}
+            className={`px-6 py-2 rounded-lg border text-sm font-medium transition-colors ${
+              page === 1 || loading
+                ? 'bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:text-blue-600'
+            }`}
+          >
+            上一页
+          </button>
+          
+          <span className="text-gray-600 font-medium px-2">
+            {page} <span className="text-gray-300 mx-1">/</span> {pageCount}
+          </span>
+
+          <button
+            onClick={() => handlePageChange(page + 1)}
+            disabled={page === pageCount || loading}
+            className={`px-6 py-2 rounded-lg border text-sm font-medium transition-colors ${
+              page === pageCount || loading
+                ? 'bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:text-blue-600'
+            }`}
+          >
+            下一页
+          </button>
+        </div>
+      )}
     </div>
   );
 }
