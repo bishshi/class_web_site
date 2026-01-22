@@ -45,7 +45,7 @@ export default function RootLayout({
                     Version: v{packageJson.version} 
                     <span className="mx-2">|</span> 
                     {/* 显示最后更新时间 */}
-                    Last Updated: {updateTime}
+                    Last Revalidate: {updateTime}
                 </p>
             </div>
           </footer>
