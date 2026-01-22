@@ -60,7 +60,7 @@ export default function ProtectedStudentSection() {
           documentId: item.documentId,
           name: item.Name,
           location: item.location,
-          photoUrl: item.Photo?.url || item.Photo || '', // 根据Strapi版本适配图片路径
+          photoUrl: item.Photo || '', 
         })) || [];
         setStudents(data);
       }
