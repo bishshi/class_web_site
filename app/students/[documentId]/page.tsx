@@ -7,6 +7,85 @@ import { BlocksRenderer } from '@strapi/blocks-react-renderer';
 import { Student } from '@/types/student';
 import { isAuthenticated } from '@/lib/auth';
 
+// ============================================================================
+// 新增：Article 类型定义（统一风格）
+// ============================================================================
+interface Article {
+  id: number;          // 用于 key
+  documentId: string;  // Strapi v5 标识，用于跳转
+  title: string;
+  summary: string;
+  cover: string;
+  publishedAt: string;
+  category: string;
+  isTop?: boolean;     // 是否置顶
+}
+
+// ============================================================================
+// 新增：文章卡片组件（统一风格）
+// ============================================================================
+const ArticleCard = ({ article }: { article: Article }) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('zh-CN', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  // 分类配置
+  const categoryConfig: Record<string, { name: string; color: string }> = {
+    'Teacher': { name: '教师风采', color: 'bg-blue-500' },
+    'Student': { name: '学子风采', color: 'bg-emerald-500' },
+    'Event': { name: '班级活动', color: 'bg-purple-500' },
+    'SpecialEvent': { name: '特别策划', color: 'bg-amber-500' },
+  };
+
+  const config = categoryConfig[article.category] || { name: article.category, color: 'bg-gray-500' };
+
+  return (
+    <Link 
+      href={`/article/${article.documentId}`}
+      key={article.id}
+      className="group block bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300"
+    >
+      <div className="p-6">
+        {/* 标签区域 */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium text-white ${config.color}`}>
+            {config.name}
+          </span>
+          {/* 置顶标签 */}
+          {article.isTop && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-500 text-white">
+              <svg 
+                className="w-3 h-3" 
+                fill="currentColor" 
+                viewBox="0 0 20 20"
+              >
+                <path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1z" />
+              </svg>
+              TOP
+            </span>
+          )}
+        </div>
+
+        <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 line-clamp-1">
+          {article.title}
+        </h3>
+        <p className="text-gray-500 text-sm line-clamp-2 mb-4 h-10">
+          {article.summary}
+        </p>
+        <div className="flex items-center justify-between text-xs text-gray-400">
+          <span>{formatDate(article.publishedAt)}</span>
+          <span>阅读全文 &rarr;</span>
+        </div>
+      </div>
+    </Link>
+  );
+};
+
 export default function StudentProfilePage() {
   const params = useParams();
   const documentId = params.documentId as string;
@@ -16,6 +95,12 @@ export default function StudentProfilePage() {
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [error, setError] = useState(false);
+  
+  // ============================================================================
+  // 新增：相关文章状态
+  // ============================================================================
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [articlesLoading, setArticlesLoading] = useState(false);
 
   useEffect(() => {
     const loggedIn = isAuthenticated();
@@ -44,6 +129,13 @@ export default function StudentProfilePage() {
       if (res.ok) {
         const json = await res.json();
         setStudent(json.data);
+        
+        // ============================================================================
+        // 新增：获取相关文章
+        // ============================================================================
+        if (json.data.relatedArticle) {
+          fetchRelatedArticles(json.data.relatedArticle);
+        }
       } else {
         setError(true);
       }
@@ -52,6 +144,55 @@ export default function StudentProfilePage() {
       setError(true);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ============================================================================
+  // 新增：获取相关文章的函数
+  // ============================================================================
+  const fetchRelatedArticles = async (relatedArticle: string) => {
+    if (!relatedArticle || !relatedArticle.trim()) {
+      return;
+    }
+
+    setArticlesLoading(true);
+    try {
+      const documentIds = relatedArticle
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line);
+
+      if (documentIds.length === 0) {
+        setArticlesLoading(false);
+        return;
+      }
+
+      const filters = documentIds.map((id, index) => 
+        `filters[$or][${index}][documentId][$eq]=${id}`
+      ).join('&');
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_STRAPI_API_URL}/api/articles?${filters}&populate=*&sort[0]=publishedAt:desc`
+      );
+
+      if (res.ok) {
+        const json = await res.json();
+        const data = json.data?.map((item: any) => ({
+          id: item.id,                    // 数据库 ID
+          documentId: item.documentId,    // Strapi v5 标识
+          title: item.title,
+          summary: item.summary,
+          cover: item.cover || '',
+          publishedAt: item.publishedAt,
+          category: item.category,
+          isTop: item.isTop || false,     // 是否置顶
+        })) || [];
+        setArticles(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch related articles:', error);
+    } finally {
+      setArticlesLoading(false);
     }
   };
 
@@ -113,7 +254,6 @@ export default function StudentProfilePage() {
         <div className="lg:col-span-4">
           <div className="sticky top-24">
             <div className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-gray-100 mb-6 shadow-sm">
-              {/* 【修改处】直接使用 student.Photo 字符串 */}
               {student.Photo ? (
                 <img 
                   src={student.Photo} 
@@ -173,6 +313,31 @@ export default function StudentProfilePage() {
               )}
             </div>
           </div>
+
+          {/* ============================================================================ */}
+          {/* 新增：相关文章区块 */}
+          {/* ============================================================================ */}
+          {articles.length > 0 && (
+            <div className="mt-12 pt-8 border-t-2 border-gray-100">
+              <div className="flex items-center justify-between mb-6 border-b pb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-6 bg-blue-500 rounded-full"></div>
+                  <h3 className="text-2xl font-bold text-gray-800">相关文章</h3>
+                </div>
+                <span className="text-sm text-gray-500">共 {articles.length} 篇</span>
+              </div>
+
+              {articlesLoading ? (
+                <div className="text-center text-gray-400 py-8">加载相关文章...</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {articles.map(article => (
+                    <ArticleCard key={article.id} article={article} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </article>

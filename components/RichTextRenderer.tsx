@@ -62,23 +62,25 @@ const processCustomTags = (content: string) => {
   // API 转义清洗
   let processed = content.replace(/\\\[/g, '[').replace(/\\\]/g, ']');
 
+  // --- 【新增】移除人员引用标签（这些标签由 ArticleRelatedPeople 组件处理）---
+  // 移除 [teacher:xxx] 和 [student:xxx] 标签，避免在正文中显示
+  processed = processed.replace(/\[teacher:[^\]]+\]/g, '');
+  processed = processed.replace(/\[student:[^\]]+\]/g, '');
+
   // --- 【新增】 Wistia 处理逻辑 ---
   
   // 场景 A: 用户使用短代码 [wistia id="xxxx"]
+  // 使用换行符包裹，确保不会被包裹在 <p> 标签内
   processed = processed.replace(
     /\[wistia\s+id="([a-zA-Z0-9]+)"\]/g,
-    '<custom-wistia media-id="$1"></custom-wistia>'
+    '\n\n<custom-wistia media-id="$1"></custom-wistia>\n\n'
   );
 
   // 场景 B: 用户粘贴了原始的 Wistia HTML 代码
-  // 我们使用正则提取 media-id，并将整个原始代码块替换为我们的自定义标签
-  // 原始代码通常包含 <script...>, <style...>, <wistia-player...>
-  // 下面的正则会匹配包含 wistia-player 的那一行或那一块
   const wistiaRawRegex = /<wistia-player\s+media-id="([a-zA-Z0-9]+)"[^>]*><\/wistia-player>/g;
-  processed = processed.replace(wistiaRawRegex, '<custom-wistia media-id="$1"></custom-wistia>');
+  processed = processed.replace(wistiaRawRegex, '\n\n<custom-wistia media-id="$1"></custom-wistia>\n\n');
 
-  // 清理残留的 wistia script 和 style 标签 (防止 rehype-raw 渲染出乱码或被 sanitize 过滤后留白)
-  // 注意：这步是为了清理用户粘贴进来的原始 <script> 文本，因为我们已经在组件里手动加载了
+  // 清理残留的 wistia script 和 style 标签
   processed = processed.replace(/<script src=".*wistia.*".*><\/script>/g, '');
   processed = processed.replace(/<style>wistia-player.*<\/style>/g, '');
 
@@ -149,7 +151,7 @@ const customSanitizeSchema = {
   ...defaultSchema,
   attributes: {
     ...defaultSchema.attributes,
-    div: ["className", "class", "style", "data-media-id"], // 允许 data-media-id 以防万一
+    div: ["className", "class", "style", "data-media-id"],
     span: ["className", "class", "style"],
     img: ["className", "class", "style", "alt", "src", "width", "height"],
     table: ["className", "class", "style"],
@@ -158,15 +160,12 @@ const customSanitizeSchema = {
     tr: ["className", "class", "style"],
     th: ["className", "class", "style"],
     td: ["className", "class", "style"],
-    
-    // 【新增】允许自定义标签携带 media-id 属性
     "custom-wistia": ["media-id", "class", "className"], 
   },
   tagNames: [
     ...(defaultSchema.tagNames || []), 
     "div", "span", "figure", "figcaption", 
     "table", "thead", "tbody", "tr", "th", "td",
-    // 【新增】白名单放行自定义标签
     "custom-wistia"
   ],
 };
@@ -185,18 +184,17 @@ const MarkdownViewer = ({ content }: { content: string }) => {
         [rehypeSanitize, customSanitizeSchema]
       ]}
       components={{
-        // --- 【新增】将自定义 HTML 标签映射为 React 组件 ---
-        // @ts-ignore: types for custom-wistia aren't strict in react-markdown
+        // 自定义标签映射
+        // @ts-ignore
         "custom-wistia": ({ node, ...props }) => {
-           // 注意：rehype 传递属性时，会将 media-id 转为 mediaId 吗？通常会保留或转为小写。
-           // 我们直接从 props 获取 'media-id' 或 'mediaid'
            const mediaId = props['media-id'] || props.mediaid;
            if (!mediaId) return null;
            return <WistiaPlayer mediaId={mediaId} />;
         },
 
+        // 修复：使用 div 包裹而不是 figure，避免 <p> 嵌套 <figure> 错误
         img: ({ ...props }) => (
-          <figure className="my-8 flex flex-col items-center select-none !indent-0">
+          <span className="my-8 flex flex-col items-center select-none !indent-0 block">
             <img
               {...props}
               className="w-auto rounded-xl shadow-md object-cover bg-gray-100"
@@ -204,11 +202,11 @@ const MarkdownViewer = ({ content }: { content: string }) => {
               alt={props.alt || "image"}
             />
             {props.alt && (
-              <figcaption className="mt-2 text-center text-sm text-gray-500 italic">
+              <span className="mt-2 text-center text-sm text-gray-500 italic block">
                 {props.alt}
-              </figcaption>
+              </span>
             )}
-          </figure>
+          </span>
         ),
         a: ({ ...props }) => (
           <a
@@ -258,7 +256,6 @@ const MarkdownViewer = ({ content }: { content: string }) => {
 function isPureHtml(text: string) {
   const trimmed = text.trim();
   if (/\\\[|\\\]/.test(trimmed)) return false; 
-  // 如果包含 wistia 短代码或标签，也不视为纯 HTML，走我们的解析流程
   if (/\[wistia|wistia-player/.test(trimmed)) return false;
   return /^<([a-z][\s\S]?)>[\s\S]*<\/\1>$/.test(trimmed) && !/[\[\]]/.test(trimmed);
 }
@@ -267,8 +264,6 @@ export default function ArticleRichText({ content }: { content: string }) {
   if (!content) return null;
   
   const finalHtml = processCustomTags(content);
-  // 注意：processCustomTags 可能会生成 <custom-wistia>，这在 pureHtml 模式下无法被 React 组件捕获
-  // 所以如果有 wistia 标签，最好强制走 MarkdownViewer
   const hasCustomComponents = /<custom-wistia/.test(finalHtml);
   const pureHtml = isPureHtml(content) && !hasCustomComponents;
 

@@ -5,6 +5,8 @@ import Link from "next/link";
 import ArticleRichText from "@/components/RichTextRenderer";
 import ShareButton from "@/components/ShareButton";
 import CommentSection from "@/components/CommentSection";
+import ArticleRelatedPeople from '@/components/ArticleRelatedPeople';
+
 
 const TWIKOO_ENV_ID = process.env.NEXT_PUBLIC_TWIKOO_ENV_ID || "";
 
@@ -16,6 +18,7 @@ interface Article {
   category: "Teacher" | "Student" | "Event" | "SpecialEvent";
   cover: string;
   publishedAt: string;
+  relatedPerson?: string; // 新增：相关人员字段
 }
 
 async function getArticle(documentId: string): Promise<Article | null> {
@@ -116,6 +119,13 @@ export default async function ArticlePage({ params }: Props) {
           {/* 正文区域: 无框设计 */}
           <div className="max-w-none">
             <ArticleRichText content={article.content} />
+            
+            {/* ============================================ */}
+            {/* 相关人员区块 - 使用 relatedPerson 字段 */}
+            {/* ============================================ */}
+            {article.relatedPerson && (
+              <ArticleRelatedPeople relatedPerson={article.relatedPerson} />
+            )}
             
             <div className="mt-16 flex items-center justify-between border-t border-slate-100 pt-8">
                 <div className="text-sm text-slate-400 flex items-center">
