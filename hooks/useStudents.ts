@@ -46,7 +46,7 @@ export function useStudents() {
   const { data, error, isLoading } = useSWR(key, fetcher, {
     // 缓存配置
     revalidateOnFocus: false, // 窗口重新聚焦时不重新请求（除非你想实时性很高）
-    dedupingInterval: 60000,  // 1分钟内重复调用直接用缓存，不发请求
+    dedupingInterval: 6000000,  // 10 分钟内相同请求不重复发送
   });
 
   return {
