@@ -4,9 +4,10 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Fuse from "fuse.js";
-import { getSearchIndex, SearchItem } from "@/lib/getSearchIndex"; // 导入刚才改好的 Action
+import { getSearchIndex, SearchItem } from "@/lib/getSearchIndex";
+import { useStudents } from "@/hooks/useStudents"; 
 
-// 图标组件保持不变...
+// 图标组件
 const SearchIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
     <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
@@ -22,11 +23,18 @@ export default function SearchModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchItem[]>([]);
-  const [sourceData, setSourceData] = useState<SearchItem[]>([]);
-  const [dataLoaded, setDataLoaded] = useState(false);
+  
+  // 状态1：公共数据 (文章、老师)
+  const [publicData, setPublicData] = useState<SearchItem[]>([]);
+  const [publicLoaded, setPublicLoaded] = useState(false);
+
+  // 状态2：私有数据 (通过 SWR 获取学生)
+  // useStudents 内部会自动判断：没登录就不发请求，返回空数组
+  const { students: rawStudents, isLoading: studentsLoading } = useStudents();
+  
   const pathname = usePathname();
 
-  // 路由变化关闭弹窗
+  // 路由变化自动关闭
   useEffect(() => setIsOpen(false), [pathname]);
 
   // 快捷键监听
@@ -42,25 +50,40 @@ export default function SearchModal() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // 打开时加载数据
+  // 打开弹窗时，加载公共数据
   useEffect(() => {
-    if (isOpen && !dataLoaded) {
+    if (isOpen && !publicLoaded) {
       getSearchIndex().then((data) => {
-        console.log("搜索索引已加载:", data); // 调试用
-        setSourceData(data);
-        setDataLoaded(true);
+        setPublicData(data);
+        setPublicLoaded(true);
       });
     }
-  }, [isOpen, dataLoaded]);
+  }, [isOpen, publicLoaded]);
 
-  // 配置 Fuse
+  // 核心逻辑：合并数据源
+  const allSourceData = useMemo(() => {
+    // 1. 格式化学生数据 (适配 SearchItem 接口)
+    const formattedStudents: SearchItem[] = rawStudents.map((stu: any) => ({
+      id: `student-${stu.documentId || stu.id}`,
+      title: stu.Name || stu.name, // 兼容大小写
+      subTitle: "学生",
+      href: `/students/${stu.documentId || stu.id}`,
+      description: stu.location || "暂无班级信息",
+      image: stu.Photo?.url || null
+    }));
+
+    // 2. 合并公共数据和私有数据
+    return [...publicData, ...formattedStudents];
+  }, [publicData, rawStudents]);
+
+  // 配置 Fuse.js
   const fuse = useMemo(() => {
-    return new Fuse(sourceData, {
-      keys: ["title", "description", "subTitle"], // 增加搜索 subTitle，这样搜"语文"也能搜到老师
+    return new Fuse(allSourceData, {
+      keys: ["title", "description", "subTitle"], // 增加 subTitle 搜索
       threshold: 0.3,
       includeScore: true,
     });
-  }, [sourceData]);
+  }, [allSourceData]);
 
   // 执行搜索
   useEffect(() => {
@@ -72,28 +95,33 @@ export default function SearchModal() {
     setResults(fuseResults.map((res) => res.item).slice(0, 20));
   }, [query, fuse]);
 
+  // 计算加载状态：公共数据没回来 OR (正在打开且SWR正在加载且还没有学生数据)
+  const isGlobalLoading = !publicLoaded || (isOpen && studentsLoading && rawStudents.length === 0);
+
   return (
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 bg-gray-100/50 backdrop-blur-sm border border-gray-200/50 rounded-full hover:bg-gray-200/80 transition-all"
       >
         <SearchIcon />
-        <span className="hidden sm:inline">搜索全站...</span>
-        <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-semibold text-gray-800 bg-white border border-gray-200 rounded-md shadow-sm">
+        <span className="hidden sm:inline">搜索...</span>
+        <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs font-semibold text-gray-600 bg-white border border-gray-200 rounded-md shadow-sm">
           ⌘K
         </kbd>
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 px-4 sm:px-6 font-sans">
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-24 px-4 sm:px-6 font-sans">
+          {/* 背景遮罩 */}
           <div 
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" 
+            className="fixed inset-0 bg-black/40 backdrop-blur-md transition-opacity" 
             onClick={() => setIsOpen(false)}
           />
 
-          <div className="relative w-full max-w-xl bg-white rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 ring-1 ring-gray-900/5">
-            <div className="flex items-center border-b border-gray-100 px-4 py-3">
+          <div className="relative w-full max-w-xl bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 ring-1 ring-black/5">
+            
+            <div className="flex items-center border-b border-gray-200/60 px-4 py-4">
               <div className="text-gray-400"><SearchIcon /></div>
               <input
                 type="text"
@@ -103,55 +131,71 @@ export default function SearchModal() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
-              <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
                 <CloseIcon />
               </button>
             </div>
 
             <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
-              {!dataLoaded ? (
-                 <div className="p-8 text-center text-gray-400 text-sm animate-pulse">正在同步数据...</div>
+              {isGlobalLoading ? (
+                 <div className="p-12 text-center text-gray-400 text-sm animate-pulse">正在同步数据...</div>
               ) : results.length > 0 ? (
-                <ul className="divide-y divide-gray-50 py-2">
+                <ul className="divide-y divide-gray-100 py-2">
                   {results.map((item) => (
                     <li key={item.id}>
                       <Link 
                         href={item.href} 
-                        className="block px-4 py-3 hover:bg-blue-50/50 transition-colors group"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-4 px-4 py-3 hover:bg-blue-50/50 transition-colors group"
                       >
-                        <div className="flex items-center gap-3">
-                          {/* 如果有图显示缩略图 */}
-                          {item.image && (
-                            <div className="w-10 h-10 rounded bg-gray-100 overflow-hidden flex-shrink-0">
-                               {/* 这里为了演示简单用了img，建议换成 next/image */}
-                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                               <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
-                            </div>
+                        <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-200">
+                          {item.image ? (
+                             // eslint-disable-next-line @next/next/no-img-element
+                             <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                          ) : (
+                             <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">暂无</div>
                           )}
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-gray-700 font-medium group-hover:text-blue-600 transition-colors">
-                                {item.title}
-                              </span>
-                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider border border-gray-200 px-1.5 py-0.5 rounded bg-gray-50">
-                                {item.subTitle}
-                              </span>
-                            </div>
-                            {item.description && (
-                                <p className="text-xs text-gray-400 mt-1 line-clamp-1">{item.description}</p>
-                            )}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-gray-800 font-medium group-hover:text-blue-600 transition-colors truncate pr-2">
+                              {item.title}
+                            </span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider border border-gray-200 px-1.5 py-0.5 rounded bg-gray-50 flex-shrink-0">
+                              {item.subTitle}
+                            </span>
                           </div>
+                          <p className="text-sm text-gray-500 line-clamp-1">
+                            {item.description}
+                          </p>
                         </div>
                       </Link>
                     </li>
                   ))}
                 </ul>
               ) : query ? (
-                <div className="p-12 text-center text-gray-500">无相关结果</div>
+                <div className="p-16 text-center text-gray-500">
+                  <p>没有找到与 "{query}" 相关的内容</p>
+                </div>
               ) : (
-                <div className="p-12 text-center text-gray-400 text-sm">输入关键词开始搜索</div>
+                <div className="p-16 text-center text-gray-400 text-sm">
+                  输入关键词开始搜索
+                </div>
               )}
             </div>
+
+            <div className="bg-gray-50/80 px-4 py-2 text-xs text-gray-400 border-t border-gray-200/60 flex justify-between items-center backdrop-blur-sm">
+              <span className="flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${rawStudents.length > 0 ? 'bg-blue-500' : 'bg-green-500'} animate-pulse`}></span>
+                {rawStudents.length > 0 ? 'Full Access Mode' : 'Public Search Mode'}
+              </span>
+              <div className="flex gap-3 font-mono opacity-70">
+                 <span>Enter 确认</span>
+                 <span>Esc 关闭</span>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
