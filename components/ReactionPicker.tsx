@@ -14,7 +14,7 @@ interface ReactionPickerProps {
 
   /**
    * 内容的 Database ID (必须是数字，或者数字字符串 "12")
-   * 注意：不要传 Document ID ("article-xyz...")
+   * ❌ 不要传 Document ID ("article-xyz...")
    */
   itemId: number | string;
 
@@ -131,8 +131,8 @@ export default function ReactionPicker({
 
   const fetchReactions = async () => {
     try {
-      // 动态拼接 URL: /collection/:uid/:id
-      const url = `${STRAPI_URL}/api/reactions/list/collection/${collectionType}/${itemId}`;
+      // ✅ 修正路径: /api/reactions/:uid/:id
+      const url = `${STRAPI_URL}/api/reactions/${collectionType}/${itemId}`;
 
       const response = await fetch(url, {
         headers: {
@@ -180,7 +180,8 @@ export default function ReactionPicker({
     setIsOpen(false); // 点击后立即关闭选择器
 
     try {
-      const url = `${STRAPI_URL}/api/reactions/toggle/${kind.slug}/collection/${collectionType}/${itemId}`;
+      // ✅ 修正路径: /api/reactions/:kind/:uid/:id
+      const url = `${STRAPI_URL}/api/reactions/${kind.slug}/${collectionType}/${itemId}`;
 
       const response = await fetch(url, {
         method: "POST",
@@ -195,9 +196,8 @@ export default function ReactionPicker({
         updateLocalCount(kind);
       }
     } catch (error) {
-      // 网络层面的错误处理 (可选：这里可以做乐观更新的回滚，或者保持现状)
+      // 网络层面的错误处理 (乐观更新回滚逻辑可视需求添加，这里保持乐观)
       if (error instanceof TypeError && (error as any).message?.includes('Failed to fetch')) {
-        // 某些特殊网络情况下，依然尝试更新UI
         updateLocalCount(kind);
       } else {
         console.error("切换 reaction 失败:", error);
@@ -220,7 +220,7 @@ export default function ReactionPicker({
           isActive: !current.isActive,
         });
       } else {
-        // 如果是该类型第一个点赞 (边缘情况)
+        // 如果是该类型第一个点赞
         newCounts.set(kind.slug, {
             kind,
             count: 1,
