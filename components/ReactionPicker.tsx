@@ -5,7 +5,7 @@ import { Smile } from "lucide-react";
 
 interface ReactionPickerProps {
   articleId: string;
-  contentType?: string; // 默认 'article'
+  contentType?: string;
   className?: string;
 }
 
@@ -90,13 +90,13 @@ export default function ReactionPicker({
 
   const fetchReactionKinds = async () => {
     try {
+      // 使用与 Playground 完全相同的查询格式
       const query = `
         query {
           reactionKinds {
             slug
             name
             emoji
-            emojiFallbackUrl
           }
         }
       `;
@@ -109,15 +109,20 @@ export default function ReactionPicker({
         body: JSON.stringify({ query }),
       });
 
-      const { data, errors } = await response.json();
-      
-      if (errors) {
-        console.error('GraphQL errors:', errors);
+      if (!response.ok) {
+        console.error("HTTP 错误:", response.status);
         return;
       }
 
-      if (data?.reactionKinds) {
-        setReactionKinds(data.reactionKinds);
+      const result = await response.json();
+      
+      if (result.errors) {
+        console.error('GraphQL 错误:', result.errors);
+        return;
+      }
+
+      if (result.data?.reactionKinds) {
+        setReactionKinds(result.data.reactionKinds);
       }
     } catch (error) {
       console.error("获取 reaction kinds 失败:", error);
@@ -126,12 +131,12 @@ export default function ReactionPicker({
 
   const fetchReactions = async () => {
     try {
-      // 构建 relatedUid: api::article.article:documentId
-      const relatedUid = `api::${contentType}.${contentType}:${articleId}`;
+      // 构建正确的 uid 格式
+      const uid = `api::${contentType}.${contentType}:${articleId}`;
 
       const query = `
-        query($relatedUid: String!) {
-          reactionsList(relatedUid: $relatedUid) {
+        query {
+          reactionsList(uid: "${uid}") {
             documentId
             kind {
               slug
@@ -150,23 +155,24 @@ export default function ReactionPicker({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Reactions-Author': userId,  // 传递用户 ID
         },
-        body: JSON.stringify({
-          query,
-          variables: { relatedUid },
-        }),
+        body: JSON.stringify({ query }),
       });
 
-      const { data, errors } = await response.json();
-
-      if (errors) {
-        console.error('GraphQL errors:', errors);
+      if (!response.ok) {
+        console.error("HTTP 错误:", response.status);
         return;
       }
 
-      if (data?.reactionsList) {
-        const allReactions = data.reactionsList;
+      const result = await response.json();
+
+      if (result.errors) {
+        console.error('GraphQL 错误:', result.errors);
+        return;
+      }
+
+      if (result.data?.reactionsList) {
+        const allReactions = result.data.reactionsList;
         
         // 统计每种 reaction 的数量和用户状态
         const counts = new Map<string, ReactionCount>();
@@ -202,21 +208,20 @@ export default function ReactionPicker({
     setIsOpen(false);
 
     try {
-      const relatedUid = `api::${contentType}.${contentType}:${articleId}`;
+      // uid 只包含 content type,documentId 单独传递
+      const uid = `api::${contentType}.${contentType}`;
 
+      // 使用正确的 mutation 格式
       const mutation = `
-        mutation($kind: String!, $relatedUid: String!) {
-          reactionsToggle(
+        mutation {
+          reactionToggle(
             input: {
-              kind: $kind
-              relatedUid: $relatedUid
+              kind: "${kind.slug}"
+              uid: "${uid}"
+              documentId: "${articleId}"
             }
           ) {
             documentId
-            kind {
-              slug
-              name
-            }
           }
         }
       `;
@@ -227,23 +232,22 @@ export default function ReactionPicker({
           'Content-Type': 'application/json',
           'X-Reactions-Author': userId,
         },
-        body: JSON.stringify({
-          query: mutation,
-          variables: {
-            kind: kind.slug,
-            relatedUid,
-          },
-        }),
+        body: JSON.stringify({ query: mutation }),
       });
 
-      const { data, errors } = await response.json();
-
-      if (errors) {
-        console.error('GraphQL errors:', errors);
+      if (!response.ok) {
+        console.error("HTTP 错误:", response.status);
         return;
       }
 
-      if (data?.reactionsToggle) {
+      const result = await response.json();
+
+      if (result.errors) {
+        console.error('GraphQL 错误:', result.errors);
+        return;
+      }
+
+      if (result.data?.reactionToggle) {
         // 更新本地状态
         setReactionCounts(prev => {
           const newCounts = new Map(prev);
