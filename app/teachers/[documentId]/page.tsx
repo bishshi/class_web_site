@@ -90,7 +90,7 @@ const ArticleCard = ({ article }: { article: Article }) => {
   // 分类配置
   const categoryConfig: Record<string, { name: string; color: string }> = {
     'Teacher': { name: '教师风采', color: 'bg-blue-500' },
-    'Student': { name: '学子风采', color: 'bg-emerald-500' },
+    'Student': { name: '学生风采', color: 'bg-emerald-500' },
     'Event': { name: '班级活动', color: 'bg-purple-500' },
     'SpecialEvent': { name: '特别策划', color: 'bg-amber-500' },
   };
@@ -363,7 +363,10 @@ export default function TeacherPage() {
                
                {/* 右侧:Reactions 和分享按钮 */}
                <div className="flex items-center gap-3">
-                 <ReactionPicker articleId={`teacher-${teacher.documentId}`} />
+                <ReactionPicker 
+                  articleId={teacher.documentId}
+                  contentType="teacher"
+                />
                  <ShareButton />
                </div>
              </div>
