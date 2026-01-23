@@ -3,7 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { Clock } from 'lucide-react';
 import RichTextRenderer from '@/components/RichTextRenderer';
+import ReactionPicker from '@/components/ReactionPicker';
+import ShareButton from '@/components/ShareButton';
+import CommentSection from "@/components/CommentSection";
+
+const TWIKOO_ENV_ID = process.env.NEXT_PUBLIC_TWIKOO_ENV_ID || "";
 
 // ============================================================================
 // 类型定义
@@ -21,7 +27,7 @@ interface TeacherData {
   relatedArticle?: string;
 }
 
-// 新增：文章类型
+// 新增:文章类型
 interface Article {
   id: number;
   documentId: string;
@@ -34,7 +40,7 @@ interface Article {
 }
 
 // ============================================================================
-// 工具函数：智能提取图片 URL
+// 工具函数:智能提取图片 URL
 // ============================================================================
 const getPhotoUrl = (photoField: any): string | null => {
   if (!photoField) return null;
@@ -53,7 +59,7 @@ const getPhotoUrl = (photoField: any): string | null => {
 };
 
 // ============================================================================
-// 工具函数：日期格式化
+// 工具函数:日期格式化
 // ============================================================================
 const formatDate = (dateString?: string | null) => {
   if (!dateString) return '至今';
@@ -67,7 +73,7 @@ const formatDate = (dateString?: string | null) => {
   }
 };
 
-// 新增：文章日期格式化
+// 新增:文章日期格式化
 const formatArticleDate = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('zh-CN', { 
@@ -78,7 +84,7 @@ const formatArticleDate = (dateString: string) => {
 };
 
 // ============================================================================
-// 新增：文章卡片组件
+// 新增:文章卡片组件
 // ============================================================================
 const ArticleCard = ({ article }: { article: Article }) => {
   // 分类配置
@@ -143,7 +149,7 @@ export default function TeacherPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  // 新增：相关文章状态
+  // 新增:相关文章状态
   const [articles, setArticles] = useState<Article[]>([]);
   const [articlesLoading, setArticlesLoading] = useState(false);
 
@@ -176,7 +182,7 @@ export default function TeacherPage() {
 
           setTeacher(teacherData);
 
-          // 如果有 relatedArticle，获取文章
+          // 如果有 relatedArticle,获取文章
           if (teacherData.relatedArticle) {
             fetchRelatedArticles(teacherData.relatedArticle);
           }
@@ -194,7 +200,7 @@ export default function TeacherPage() {
     }
   };
 
-  // 新增：获取相关文章
+  // 新增:获取相关文章
   const fetchRelatedArticles = async (relatedArticle: string) => {
     if (!relatedArticle || !relatedArticle.trim()) {
       return;
@@ -344,10 +350,33 @@ export default function TeacherPage() {
                   暂无详细介绍...
                 </div>
              )}
+
+             {/* ============================================ */}
+             {/* 新增: Reaction 和分享按钮 */}
+             {/* ============================================ */}
+             <div className="mt-16 flex items-center justify-between border-t border-slate-100 pt-8">
+               {/* 左侧:完成标记 */}
+               <div className="text-sm text-slate-400 flex items-center">
+                 <Clock className="mr-1.5 h-4 w-4" />
+                 完
+               </div>
+               
+               {/* 右侧:Reactions 和分享按钮 */}
+               <div className="flex items-center gap-3">
+                 <ReactionPicker articleId={`teacher-${teacher.documentId}`} />
+                 <ShareButton />
+               </div>
+             </div>
+
+            {/* 评论区 */}
+            <CommentSection 
+              envId={TWIKOO_ENV_ID} 
+              path={`/teachers/${teacher.documentId}`} 
+            />
           </div>
 
           {/* ============================================================================ */}
-          {/* 新增：相关文章区块 */}
+          {/* 相关文章区块 */}
           {/* ============================================================================ */}
           {articles.length > 0 && (
             <div className="mt-8">

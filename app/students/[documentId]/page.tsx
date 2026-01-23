@@ -3,16 +3,22 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Clock } from 'lucide-react';
 import { BlocksRenderer } from '@strapi/blocks-react-renderer';
 import { Student } from '@/types/student';
 import { isAuthenticated } from '@/lib/auth';
+import CommentSection from "@/components/CommentSection";
+import ReactionPicker from '@/components/ReactionPicker';
+import ShareButton from '@/components/ShareButton';
+
+const TWIKOO_ENV_ID = process.env.NEXT_PUBLIC_TWIKOO_ENV_ID || "";
 
 // ============================================================================
-// 新增：Article 类型定义（统一风格）
+// 新增:Article 类型定义(统一风格)
 // ============================================================================
 interface Article {
   id: number;          // 用于 key
-  documentId: string;  // Strapi v5 标识，用于跳转
+  documentId: string;  // Strapi v5 标识,用于跳转
   title: string;
   summary: string;
   cover: string;
@@ -22,7 +28,7 @@ interface Article {
 }
 
 // ============================================================================
-// 文章卡片组件（统一风格）
+// 文章卡片组件(统一风格)
 // ============================================================================
 const ArticleCard = ({ article }: { article: Article }) => {
   const formatDate = (dateString: string) => {
@@ -131,7 +137,7 @@ export default function StudentProfilePage() {
         setStudent(json.data);
         
         // ============================================================================
-        // 新增：获取相关文章
+        // 新增:获取相关文章
         // ============================================================================
         if (json.data.relatedArticle) {
           fetchRelatedArticles(json.data.relatedArticle);
@@ -312,10 +318,32 @@ export default function StudentProfilePage() {
                 <p className="text-gray-400 italic">该同学暂无详细介绍。</p>
               )}
             </div>
+
+            {/* ============================================ */}
+            {/* Reaction 和分享按钮 */}
+            {/* ============================================ */}
+            <div className="mt-16 flex items-center justify-between border-t border-slate-100 pt-8">
+              {/* 左侧:完成标记 */}
+              <div className="text-sm text-slate-400 flex items-center">
+                <Clock className="mr-1.5 h-4 w-4" />
+                完
+              </div>
+              
+              {/* 右侧:Reactions 和分享按钮 */}
+              <div className="flex items-center gap-3">
+                <ReactionPicker articleId={`student-${student.documentId}`} />
+                <ShareButton />
+              </div>
+            </div>
+                {/* 评论区 */}
+                <CommentSection 
+                  envId={TWIKOO_ENV_ID} 
+                  path={`/students/${student.documentId}`} 
+                />
           </div>
 
           {/* ============================================================================ */}
-          {/* 新增：相关文章区块 */}
+          {/* 相关文章区块 */}
           {/* ============================================================================ */}
           {articles.length > 0 && (
             <div className="mt-12 pt-8 border-t-2 border-gray-100">

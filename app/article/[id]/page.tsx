@@ -6,7 +6,7 @@ import ArticleRichText from "@/components/RichTextRenderer";
 import ShareButton from "@/components/ShareButton";
 import CommentSection from "@/components/CommentSection";
 import ArticleRelatedPeople from '@/components/ArticleRelatedPeople';
-import ReactionPicker from '@/components/ReactionPicker'; // 改用 ReactionPicker
+import ReactionPicker from '@/components/ReactionPicker'; 
 
 const TWIKOO_ENV_ID = process.env.NEXT_PUBLIC_TWIKOO_ENV_ID || "";
 
@@ -136,7 +136,7 @@ export default async function ArticlePage({ params }: Props) {
               
               {/* 右侧:Reactions 和分享按钮 */}
               <div className="flex items-center gap-3">
-                <ReactionPicker articleId={article.documentId} />
+                <ReactionPicker articleId={`article-${article.documentId}`}/>
                 <ShareButton />
               </div>
             </div>
