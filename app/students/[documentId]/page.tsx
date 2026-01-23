@@ -336,6 +336,7 @@ export default function StudentProfilePage() {
                   contentType="student"
                 />
                 <ShareButton />
+              </div>
             </div>
                 {/* 评论区 */}
                 <CommentSection 
