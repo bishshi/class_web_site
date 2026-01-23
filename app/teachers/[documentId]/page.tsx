@@ -169,6 +169,7 @@ export default function TeacherPage() {
 
         if (raw) {
           const teacherData: TeacherData = {
+            id: raw.id,
             documentId: raw.documentId,
             name: raw.Name || raw.name || "未命名教师",
             title: raw.Title || raw.title || "",
