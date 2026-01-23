@@ -194,7 +194,7 @@ export default function WelcomeCard() {
         </p>
         
         <p className="text-slate-700">
-          当前位置距博主约{' '}
+          当前位置距高平市约{' '}
           <span className="font-bold text-purple-600">{locationData.distance}</span>
           {' '}公里！
         </p>
