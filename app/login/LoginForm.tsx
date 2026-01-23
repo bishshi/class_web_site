@@ -16,7 +16,9 @@ export default function LoginForm() {
   // 检查是否已登录，如果已登录则直接跳转
   useEffect(() => {
     if (isAuthenticated()) {
-      const redirect = searchParams.get('redirect') || '/members';
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const redirect = searchParams.get('redirect') || 
+                      (user.person ? `/resume/${user.person}` : '/members');
       window.location.href = redirect;
     }
   }, [searchParams]);
@@ -48,8 +50,17 @@ export default function LoginForm() {
         localStorage.setItem('token', loginData.jwt);
         localStorage.setItem('user', JSON.stringify(loginData.user));
         
-        // 获取redirect参数，如果没有则默认跳转到 /members
-        const redirect = searchParams.get('redirect') || '/members';
+        // 判断用户是否有个人简历，如果有则跳转到简历页
+        let redirect = searchParams.get('redirect');
+        
+        if (!redirect) {
+          if (loginData.user.person) {
+            // 有简历，跳转到简历页
+            redirect = `/students/${loginData.user.person}`;
+          } else {
+            redirect = '/';
+          }
+        }
         
         // 刷新页面后跳转
         window.location.href = redirect;
@@ -179,7 +190,7 @@ export default function LoginForm() {
         </form>
 
         <div className="login-footer">
-          <p>还没有账号？请联系班级管理员</p>
+          <p>还没有账号？点击右下角反馈</p>
         </div>
       </div>
     </div>

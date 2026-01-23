@@ -5,9 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Fuse from "fuse.js";
 import { getSearchIndex, SearchItem } from "@/lib/getSearchIndex";
-import { useStudents } from "@/hooks/useStudents"; 
+import { useStudents } from "@/hooks/useStudents";
 
-// 图标组件
 const SearchIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
     <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
@@ -24,20 +23,16 @@ export default function SearchModal() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchItem[]>([]);
   
-  // 状态1：公共数据 (文章、老师)
   const [publicData, setPublicData] = useState<SearchItem[]>([]);
   const [publicLoaded, setPublicLoaded] = useState(false);
 
-  // 状态2：私有数据 (通过 SWR 获取学生)
-  // useStudents 内部会自动判断：没登录就不发请求，返回空数组
+  // 获取原始数据
   const { students: rawStudents, isLoading: studentsLoading } = useStudents();
   
   const pathname = usePathname();
 
-  // 路由变化自动关闭
   useEffect(() => setIsOpen(false), [pathname]);
 
-  // 快捷键监听
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -50,7 +45,7 @@ export default function SearchModal() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // 打开弹窗时，加载公共数据
+  // 加载公共数据
   useEffect(() => {
     if (isOpen && !publicLoaded) {
       getSearchIndex().then((data) => {
@@ -60,42 +55,46 @@ export default function SearchModal() {
     }
   }, [isOpen, publicLoaded]);
 
-  // 核心逻辑：合并数据源
+  const stableStudents = useMemo(() => {
+    return rawStudents;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(rawStudents)]);
+
+  // 合并数据源 (依赖改为 stableStudents)
   const allSourceData = useMemo(() => {
-    // 1. 格式化学生数据 (适配 SearchItem 接口)
-    const formattedStudents: SearchItem[] = rawStudents.map((stu: any) => ({
+    const formattedStudents: SearchItem[] = stableStudents.map((stu: any) => ({
       id: `student-${stu.documentId || stu.id}`,
-      title: stu.Name || stu.name, // 兼容大小写
+      title: stu.Name || stu.name,
       subTitle: "学生",
       href: `/students/${stu.documentId || stu.id}`,
       description: stu.location || "暂无班级信息",
       image: stu.Photo?.url || null
     }));
-
-    // 2. 合并公共数据和私有数据
     return [...publicData, ...formattedStudents];
-  }, [publicData, rawStudents]);
+  }, [publicData, stableStudents]);
 
-  // 配置 Fuse.js
+  // 配置 Fuse
   const fuse = useMemo(() => {
     return new Fuse(allSourceData, {
-      keys: ["title", "description", "subTitle"], // 增加 subTitle 搜索
+      keys: ["title", "description", "subTitle"],
       threshold: 0.3,
       includeScore: true,
     });
   }, [allSourceData]);
 
-  // 执行搜索
+  // 🛠️ 修复点 2：安全的 Effect 更新
   useEffect(() => {
     if (!query.trim()) {
-      setResults([]);
+      // 这里的 trick 是：如果 current 已经是空数组，就返回 prev (引用相同)，
+      // React 检测到 State 没变，就不会触发重渲染。
+      setResults(prev => prev.length === 0 ? prev : []);
       return;
     }
+    
     const fuseResults = fuse.search(query);
     setResults(fuseResults.map((res) => res.item).slice(0, 20));
   }, [query, fuse]);
 
-  // 计算加载状态：公共数据没回来 OR (正在打开且SWR正在加载且还没有学生数据)
   const isGlobalLoading = !publicLoaded || (isOpen && studentsLoading && rawStudents.length === 0);
 
   return (
@@ -113,7 +112,6 @@ export default function SearchModal() {
 
       {isOpen && (
         <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-24 px-4 sm:px-6 font-sans">
-          {/* 背景遮罩 */}
           <div 
             className="fixed inset-0 bg-black/40 backdrop-blur-md transition-opacity" 
             onClick={() => setIsOpen(false)}

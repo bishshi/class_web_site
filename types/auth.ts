@@ -7,6 +7,7 @@ export interface User {
   blocked?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  person?: string; // 个人简历 documentId
 }
 
 export interface LoginResponse {
