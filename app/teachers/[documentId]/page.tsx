@@ -15,6 +15,7 @@ const TWIKOO_ENV_ID = process.env.NEXT_PUBLIC_TWIKOO_ENV_ID || "";
 // 类型定义
 // ============================================================================
 interface TeacherData {
+  id: number;
   documentId: string;
   name: string;
   title: string;
@@ -362,10 +363,10 @@ export default function TeacherPage() {
                </div>
                
                {/* 右侧:Reactions 和分享按钮 */}
-               <div className="flex items-center gap-3">
-                 <ReactionPicker articleId={`teacher-${teacher.documentId}`} />
-                 <ShareButton />
-               </div>
+                <ReactionPicker 
+                  collectionType="api::teacher.teacher" 
+                  itemId={teacher.id} // 必须传数字ID，例如 15
+                />
              </div>
 
             {/* 评论区 */}

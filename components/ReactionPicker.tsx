@@ -3,8 +3,21 @@
 import { useState, useEffect, useRef } from "react";
 import { Smile } from "lucide-react";
 
+// --- 接口定义 ---
+
 interface ReactionPickerProps {
-  articleId: string;
+  /**
+   * Strapi 的 Collection Type UID
+   * 例如: "api::article.article", "api::comment.comment"
+   */
+  collectionType: string;
+
+  /**
+   * 内容的 Database ID (必须是数字，或者数字字符串 "12")
+   * 注意：不要传 Document ID ("article-xyz...")
+   */
+  itemId: number | string;
+
   className?: string;
 }
 
@@ -34,7 +47,11 @@ interface ReactionCount {
   isActive: boolean;
 }
 
-export default function ReactionPicker({ articleId, className = "" }: ReactionPickerProps) {
+export default function ReactionPicker({ 
+  collectionType, 
+  itemId, 
+  className = "" 
+}: ReactionPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [reactionKinds, setReactionKinds] = useState<ReactionKind[]>([]);
   const [reactionCounts, setReactionCounts] = useState<Map<string, ReactionCount>>(new Map());
@@ -44,7 +61,21 @@ export default function ReactionPicker({ articleId, className = "" }: ReactionPi
 
   const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || "http://localhost:1337";
 
-  // 生成或获取用户 ID
+  // --- 1. 安全检查: 确保传入的是数字 ID ---
+  useEffect(() => {
+    if (itemId) {
+      const isNumeric = !isNaN(Number(itemId));
+      if (!isNumeric) {
+        console.warn(
+          `[ReactionPicker] 警告: 检测到 itemId "${itemId}" 似乎不是数字。\n` +
+          `Strapi Plugin Reactions 通常需要 Database ID (如 1, 2)，而不是 Document ID。\n` +
+          `请检查父组件是否传入了 article.id。`
+        );
+      }
+    }
+  }, [itemId]);
+
+  // --- 2. 生成或获取用户唯一标识 ---
   useEffect(() => {
     let id = localStorage.getItem("reaction-user-id");
     if (!id) {
@@ -54,7 +85,7 @@ export default function ReactionPicker({ articleId, className = "" }: ReactionPi
     setUserId(id);
   }, []);
 
-  // 点击外部关闭选择器
+  // --- 3. 点击外部关闭下拉框 ---
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
@@ -71,7 +102,7 @@ export default function ReactionPicker({ articleId, className = "" }: ReactionPi
     };
   }, [isOpen]);
 
-  // 获取可用的 reaction kinds
+  // --- 4. 获取所有可用的 Reaction Kinds (配置) ---
   useEffect(() => {
     const fetchReactionKinds = async () => {
       try {
@@ -88,30 +119,32 @@ export default function ReactionPicker({ articleId, className = "" }: ReactionPi
     };
 
     fetchReactionKinds();
-  }, []);
+  }, [STRAPI_URL]);
 
-  // 获取文章的所有 reactions
+  // --- 5. 获取当前内容的 Reactions 统计 ---
   useEffect(() => {
-    if (!userId || reactionKinds.length === 0) return;
+    // 只有当必要参数都存在时才请求
+    if (!userId || reactionKinds.length === 0 || !itemId || !collectionType) return;
     fetchReactions();
-  }, [userId, articleId, reactionKinds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, itemId, collectionType, reactionKinds]);
 
   const fetchReactions = async () => {
     try {
-      const response = await fetch(
-        `${STRAPI_URL}/api/reactions/list/collection/api::article.article/${articleId}`,
-        {
-          headers: {
-            "X-Reactions-Author": userId,
-          },
-        }
-      );
+      // 动态拼接 URL: /collection/:uid/:id
+      const url = `${STRAPI_URL}/api/reactions/list/collection/${collectionType}/${itemId}`;
+
+      const response = await fetch(url, {
+        headers: {
+          "X-Reactions-Author": userId,
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();
         const allReactions = Array.isArray(data) ? data : (data.data || []);
         
-        // 统计每种 reaction 的数量和用户状态
+        // 统计每种 reaction 的数量和当前用户是否点过
         const counts = new Map<string, ReactionCount>();
         
         reactionKinds.forEach(kind => {
@@ -139,58 +172,33 @@ export default function ReactionPicker({ articleId, className = "" }: ReactionPi
     }
   };
 
+  // --- 6. 切换 (点赞/取消) ---
   const toggleReaction = async (kind: ReactionKind) => {
     if (isLoading || !userId) return;
 
     setIsLoading(true);
-    setIsOpen(false); // 点击后关闭选择器
+    setIsOpen(false); // 点击后立即关闭选择器
 
     try {
-      const response = await fetch(
-        `${STRAPI_URL}/api/reactions/toggle/${kind.slug}/collection/api::article.article/${articleId}`,
-        {
-          method: "POST",
-          headers: {
-            "X-Reactions-Author": userId,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const url = `${STRAPI_URL}/api/reactions/toggle/${kind.slug}/collection/${collectionType}/${itemId}`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "X-Reactions-Author": userId,
+          "Content-Type": "application/json",
+        },
+      });
 
       if (response.ok) {
-        // 更新本地状态
-        setReactionCounts(prev => {
-          const newCounts = new Map(prev);
-          const current = newCounts.get(kind.slug);
-          
-          if (current) {
-            newCounts.set(kind.slug, {
-              ...current,
-              count: current.isActive ? current.count - 1 : current.count + 1,
-              isActive: !current.isActive,
-            });
-          }
-          
-          return newCounts;
-        });
+        // 请求成功，更新本地状态
+        updateLocalCount(kind);
       }
     } catch (error) {
+      // 网络层面的错误处理 (可选：这里可以做乐观更新的回滚，或者保持现状)
       if (error instanceof TypeError && (error as any).message?.includes('Failed to fetch')) {
-        // CORS 预检错误,乐观更新
-        setReactionCounts(prev => {
-          const newCounts = new Map(prev);
-          const current = newCounts.get(kind.slug);
-          
-          if (current) {
-            newCounts.set(kind.slug, {
-              ...current,
-              count: current.isActive ? current.count - 1 : current.count + 1,
-              isActive: !current.isActive,
-            });
-          }
-          
-          return newCounts;
-        });
+        // 某些特殊网络情况下，依然尝试更新UI
+        updateLocalCount(kind);
       } else {
         console.error("切换 reaction 失败:", error);
       }
@@ -199,12 +207,37 @@ export default function ReactionPicker({ articleId, className = "" }: ReactionPi
     }
   };
 
-  // 获取有计数的 reactions
+  // 辅助函数：纯粹更新本地 State Map
+  const updateLocalCount = (kind: ReactionKind) => {
+    setReactionCounts(prev => {
+      const newCounts = new Map(prev);
+      const current = newCounts.get(kind.slug);
+      
+      if (current) {
+        newCounts.set(kind.slug, {
+          ...current,
+          count: current.isActive ? current.count - 1 : current.count + 1,
+          isActive: !current.isActive,
+        });
+      } else {
+        // 如果是该类型第一个点赞 (边缘情况)
+        newCounts.set(kind.slug, {
+            kind,
+            count: 1,
+            isActive: true
+        });
+      }
+      
+      return newCounts;
+    });
+  };
+
+  // 获取有计数的 reactions 用于展示
   const activeReactions = Array.from(reactionCounts.values()).filter(r => r.count > 0);
 
   return (
     <div className={`relative inline-flex items-center gap-2 ${className}`} ref={pickerRef}>
-      {/* 已有的 reactions 显示 */}
+      {/* 1. 已有的 reactions 显示 (胶囊按钮) */}
       {activeReactions.map(({ kind, count, isActive }) => (
         <button
           key={kind.slug}
@@ -226,7 +259,7 @@ export default function ReactionPicker({ articleId, className = "" }: ReactionPi
         </button>
       ))}
 
-      {/* 添加 reaction 按钮 */}
+      {/* 2. 添加 reaction 按钮 (圆形加号/笑脸) */}
       <div className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -247,7 +280,7 @@ export default function ReactionPicker({ articleId, className = "" }: ReactionPi
           <Smile className="w-5 h-5" />
         </button>
 
-        {/* Reaction 选择器弹出框 */}
+        {/* 3. Reaction 选择器弹出框 */}
         {isOpen && (
           <div 
             className="

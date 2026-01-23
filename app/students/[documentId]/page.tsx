@@ -330,10 +330,10 @@ export default function StudentProfilePage() {
               </div>
               
               {/* 右侧:Reactions 和分享按钮 */}
-              <div className="flex items-center gap-3">
-                <ReactionPicker articleId={`student-${student.documentId}`} />
-                <ShareButton />
-              </div>
+            <ReactionPicker 
+              collectionType="api::student.student" 
+              itemId={student.id} // 必须传数字ID，例如 15
+            />
             </div>
                 {/* 评论区 */}
                 <CommentSection 

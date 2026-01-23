@@ -2,6 +2,7 @@
 import type { BlocksContent } from '@strapi/blocks-react-renderer';
 
 export interface Student {
+  id: number;
   documentId: string;
   Name: string;
   Photo: string;        // 文本字段存 URL
