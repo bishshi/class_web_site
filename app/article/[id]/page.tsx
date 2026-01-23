@@ -137,10 +137,7 @@ export default async function ArticlePage({ params }: Props) {
               
               {/* 右侧:Reactions 和分享按钮 */}
               <div className="flex items-center gap-3">
-                <ReactionPicker 
-                  collectionType="api::article.article" 
-                  itemId={article.id} // 必须传数字ID，例如 15
-                />
+                <ReactionPicker articleId={`article-${article.id}`}/>
                 <ShareButton />
               </div>
             </div>
