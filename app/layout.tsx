@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import CustomContextMenu from '@/components/CustomContextMenu';
 import TypebotBubble from '@/components/TypebotBubble';
 import Footer from '@/components/Footer';
+import Watermark from "@/components/WaterMark";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,6 +26,7 @@ export default function RootLayout({
         <CustomContextMenu>
           <Navbar /> 
           {children}
+          <Watermark />
           <Footer /> 
         </CustomContextMenu>
         
