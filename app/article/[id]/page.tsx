@@ -6,7 +6,7 @@ import ArticleRichText from "@/components/RichTextRenderer";
 import ShareButton from "@/components/ShareButton";
 import CommentSection from "@/components/CommentSection";
 import ArticleRelatedPeople from '@/components/ArticleRelatedPeople';
-
+import ReactionButton from '@/components/ReactionButton';
 
 const TWIKOO_ENV_ID = process.env.NEXT_PUBLIC_TWIKOO_ENV_ID || "";
 
@@ -14,11 +14,11 @@ interface Article {
   documentId: string;
   title: string;
   summary: string;
-  content: string; // 使用 CKEditor 后 content 变为字符串类型
+  content: string;
   category: "Teacher" | "Student" | "Event" | "SpecialEvent";
   cover: string;
   publishedAt: string;
-  relatedPerson?: string; // 新增：相关人员字段
+  relatedPerson?: string;
 }
 
 async function getArticle(documentId: string): Promise<Article | null> {
@@ -55,11 +55,14 @@ type Props = {
 export default async function ArticlePage({ params }: Props) {
   const { id } = await params;
   const article = await getArticle(id);
-
   if (!article) return notFound();
-
-  const categoryStyle = categoryConfig[article.category] || { label: "未分类", color: "text-gray-700", bg: "bg-gray-100" };
-
+  
+  const categoryStyle = categoryConfig[article.category] || { 
+    label: "未分类", 
+    color: "text-gray-700", 
+    bg: "bg-gray-100" 
+  };
+  
   return (
     <main className="min-h-screen bg-white pb-24 pt-24">
       
@@ -74,22 +77,20 @@ export default async function ArticlePage({ params }: Props) {
         </Link>
       </div>
 
-      {/* 核心文章区域：扩大到 max-w-7xl */}
+      {/* 核心文章区域:扩大到 max-w-7xl */}
       <article className="container mx-auto max-w-7xl px-4 sm:px-6">
-
-        {/* 1. 封面图: 撑满 7xl 宽度，视觉更震撼 */}
+        {/* 1. 封面图: 撑满 7xl 宽度,视觉更震撼 */}
         {article.cover && (
           <div className="mb-12 overflow-hidden rounded-2xl bg-slate-100">
             <img
               src={article.cover}
               alt={article.title}
-              // max-h-[70vh] 让大图在宽屏下高度更舒展
               className="w-full h-auto object-cover max-h-[70vh]" 
             />
           </div>
         )}
         
-        {/* 内容容器: 限制在 5xl (约1024px) 居中，防止文字行太长难以阅读 */}
+        {/* 内容容器: 限制在 5xl (约1024px) 居中,防止文字行太长难以阅读 */}
         <div className="mx-auto max-w-5xl">
           
           {/* 文章头部 */}
@@ -120,29 +121,30 @@ export default async function ArticlePage({ params }: Props) {
           <div className="max-w-none">
             <ArticleRichText content={article.content} />
             
-            {/* ============================================ */}
-            {/* 相关人员区块 - 使用 relatedPerson 字段 */}
-            {/* ============================================ */}
+            {/* 相关人员区块 */}
             {article.relatedPerson && (
               <ArticleRelatedPeople relatedPerson={article.relatedPerson} />
             )}
             
+            {/* Reaction 和分享按钮 */}
             <div className="mt-16 flex items-center justify-between border-t border-slate-100 pt-8">
+              <div className="flex items-center gap-4">
                 <div className="text-sm text-slate-400 flex items-center">
                   <Clock className="mr-1.5 h-4 w-4" />
                   完
                 </div>
-                <ShareButton />
+                <ReactionButton articleId={article.documentId} />
+              </div>
+              <ShareButton />
             </div>
-            {/* 传入 path 确保每篇文章评论独立，我们使用 /article/documentId 作为唯一标识 */}
+
+            {/* 评论区 */}
             <CommentSection 
               envId={TWIKOO_ENV_ID} 
               path={`/article/${article.documentId}`} 
             />
           </div>
-
         </div>
-
       </article>
     </main>
   );
