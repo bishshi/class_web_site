@@ -191,11 +191,15 @@ const MarkdownViewer = ({ content }: { content: string }) => {
         p: ({ node, children, ...props }) => {
           // 检查子元素中是否包含 wistia-wrapper 或其他块级容器
           const hasBlockElement = React.Children.toArray(children).some(
-            child =>
-              React.isValidElement(child) &&
-              child.props &&
-              (child.props.className?.includes('wistia-wrapper') ||
-               child.type === 'div')
+            child => {
+              if (!React.isValidElement(child)) return false;
+              
+              const childProps = child.props as any;
+              return (
+                childProps?.className?.includes('wistia-wrapper') ||
+                child.type === 'div'
+              );
+            }
           );
 
           // 如果包含块级元素,直接返回 fragment 不用 p 包裹
