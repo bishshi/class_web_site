@@ -28,7 +28,6 @@ export default function StudentListPage() {
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-12 animate-pulse">
-        {/* ... 保留你的骨架屏 ... */}
         <div className="h-10 bg-gray-200 rounded w-48 mb-12"></div>
         <div className="grid grid-cols-4 gap-8">
            {[...Array(8)].map((_, i) => <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>)}
@@ -39,8 +38,23 @@ export default function StudentListPage() {
 
   // 渲染：未登录
   if (!isLoggedIn) {
-     // ... 保留你的未登录 UI ...
-     return <div>请登录</div>;
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <header className="mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">学生档案</h1>
+        </header>
+        <div className="flex flex-col items-center justify-center min-h-[400px] bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 p-8 text-center">
+          <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+            <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">学生档案仅限内部访问</h2>
+          <p className="text-gray-500 mb-8">请登录后查看详细班级成员信息</p>
+          <Link href={`/login?redirect=/students`} className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 shadow-lg">立即登录</Link>
+        </div>
+      </div>
+    );
   }
 
   return (

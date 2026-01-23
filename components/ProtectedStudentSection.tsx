@@ -33,7 +33,18 @@ export default function ProtectedStudentSection() {
   if (!isLoggedIn) {
     return (
        // ... (保持你之前的“权限受限” UI 代码不变) ...
-       <div className="text-center p-8 border-2 border-dashed bg-gray-50 rounded-xl">请先登录查看</div>
+      <div className="relative bg-gray-50 rounded-xl p-8 border-2 border-dashed border-gray-200 text-center h-[300px] flex flex-col items-center justify-center">
+        <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+          <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-bold text-gray-700 mb-2">学生档案仅限内部访问</h3>
+        <p className="text-gray-500 mb-6">请登录后查看详细班级成员信息</p>
+        <Link href="/login" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+          去登录
+        </Link>
+      </div>
     );
   }
 
