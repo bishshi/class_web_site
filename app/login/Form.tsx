@@ -17,11 +17,14 @@ export default function LoginForm() {
   // 'login' = 登录模式, 'reset' = 重置密码模式
   const [view, setView] = useState<'login' | 'reset'>('login');
 
+  // 新增：控制密码显示/隐藏的状态
+  const [showPassword, setShowPassword] = useState(false);
+
   const [formData, setFormData] = useState({ identifier: '', password: '' });
   const [token, setToken] = useState<string>('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'error' | 'success'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState(''); // 新增：用于显示邮件发送成功
+  const [successMessage, setSuccessMessage] = useState('');
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   // 1. 检查登录状态
@@ -42,6 +45,8 @@ export default function LoginForm() {
     setErrorMessage('');
     setSuccessMessage('');
     setStatus('idle');
+    // 切换模式时重置密码显示状态
+    setShowPassword(false);
     // 如果需要，可以在这里重置 Turnstile
     if (turnstile) turnstile.reset();
   };
@@ -176,7 +181,8 @@ export default function LoginForm() {
               <div className="input-group">
                 <input
                   id="password"
-                  type="password"
+                  // 修改点 1：根据状态动态切换 input 类型
+                  type={showPassword ? 'text' : 'password'}
                   className="styled-input"
                   value={formData.password}
                   onChange={handleChange}
@@ -185,7 +191,15 @@ export default function LoginForm() {
                   placeholder="密码"
                   autoComplete="current-password"
                 />
-                <EyeIcon className="password-toggle-icon" />
+                
+                {/* 修改点 2：图标包裹在可点击的 div 中，并根据状态切换图标 */}
+                <div 
+                  className="password-toggle-icon"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </div>
               </div>
             )}
 
@@ -254,8 +268,8 @@ export default function LoginForm() {
             {view === 'reset' && (
                <div style={{ textAlign: 'center', marginTop: '10px' }}>
                  <span 
-                    style={{ color: '#999', fontSize: '14px', cursor: 'pointer' }}
-                    onClick={() => switchView('login')}
+                   style={{ color: '#999', fontSize: '14px', cursor: 'pointer' }}
+                   onClick={() => switchView('login')}
                  >
                    返回登录
                  </span>
@@ -277,10 +291,19 @@ export default function LoginForm() {
 
 // --- 底部提取的图标组件 ---
 
+// 睁眼图标（查看密码）
 const EyeIcon = ({ className }: { className?: string }) => (
   <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
     <circle cx="12" cy="12" r="3"></circle>
+  </svg>
+);
+
+// 闭眼图标（隐藏密码）- 新增
+const EyeOffIcon = ({ className }: { className?: string }) => (
+  <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+    <line x1="1" y1="1" x2="23" y2="23"></line>
   </svg>
 );
 
