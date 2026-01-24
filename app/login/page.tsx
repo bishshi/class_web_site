@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { Suspense } from 'react';
 import LoginForm from './Form';
 import './form.css'; // 确保引入了 CSS
