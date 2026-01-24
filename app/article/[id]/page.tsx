@@ -43,10 +43,10 @@ const formatDate = (dateString: string) => {
 };
 
 const categoryConfig: Record<string, { label: string; color: string; bg: string }> = {
-  Teacher: { label: "师资力量", color: "text-purple-700", bg: "bg-purple-50" },
-  Student: { label: "学生风采", color: "text-blue-700", bg: "bg-blue-50" },
-  Event: { label: "班级活动", color: "text-amber-700", bg: "bg-amber-50" },
-  SpecialEvent: { label: "特别策划", color: "text-rose-700", bg: "bg-rose-50" },
+  Teacher: { label: "教师风采", color: "text-purple-700", bg: "bg-purple-50" },
+  Student: { label: "学生风采", color: "text-green-700", bg: "bg-green-50" },
+  Event: { label: "班级活动", color: "text-blue-700", bg: "bg-blue-50" },
+  SpecialEvent: { label: "特别策划", color: "text-red-700", bg: "bg-red-50" },
 };
 
 type Props = {

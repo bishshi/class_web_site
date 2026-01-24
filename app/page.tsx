@@ -217,10 +217,10 @@ export default async function HomePage() {
               />
               <div className="space-y-10">
                 <div className="group">
-                  <CategorySection title="特别策划" articles={specialArticleData} color="bg-red-500" />
+                  <CategorySection title="特别策划" articles={specialArticleData} theme="red" />
                 </div>
                 <div className="group">
-                  <CategorySection title="班级活动" articles={eventArticleData} color="bg-orange-500" />
+                  <CategorySection title="班级活动" articles={eventArticleData} theme="blue" />
                 </div>
               </div>
             </section>
@@ -234,10 +234,10 @@ export default async function HomePage() {
               />
               <div className="space-y-10">
                 <div className="group">
-                  <CategorySection title="学生风采" articles={studentArticleData} color="bg-green-500" />
+                  <CategorySection title="学生风采" articles={studentArticleData} theme="green" />
                 </div>
                 <div className="group">
-                  <CategorySection title="教师风采" articles={teacherArticleData} color="bg-blue-500" />
+                  <CategorySection title="教师风采" articles={teacherArticleData} theme="purple" />
                 </div>
               </div>
             </section>
