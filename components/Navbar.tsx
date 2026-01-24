@@ -171,7 +171,7 @@ export default function Navbar() {
                     )}
                   </div>
                 ) : (
-                  <Link href="/loginpage" className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 text-white font-semibold shadow-md text-sm"><LogIn size={16} /><span>登录</span></Link>
+                  <Link href="/login" className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 text-white font-semibold shadow-md text-sm"><LogIn size={16} /><span>登录</span></Link>
                 )}
               </div>
             </div>
@@ -184,7 +184,7 @@ export default function Navbar() {
               {isLoggedIn ? (
                  <Link href="/members" className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-sm z-10"><User size={16} className="text-white" /></Link>
               ) : (
-                <Link href="/loginpage" className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors z-10"><LogIn size={20} /></Link>
+                <Link href="/login" className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors z-10"><LogIn size={20} /></Link>
               )}
               
               {/* 【开关按钮】只负责打开，因为抽屉现在是 Portal，打开后这个按钮可能被盖住，所以我们在抽屉里再放一个关闭按钮 */}
@@ -262,7 +262,7 @@ export default function Navbar() {
                       </button>
                    </div>
                  ) : (
-                    <Link href="/loginpage" onClick={() => setIsOpen(false)} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg active:scale-95 transition-transform">
+                    <Link href="/login" onClick={() => setIsOpen(false)} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg active:scale-95 transition-transform">
                       <LogIn size={18} /> 立即登录
                     </Link>
                  )}
