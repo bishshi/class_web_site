@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
-import LoginForm from './LoginForm';
-import './login.css';
+import LoginForm from './Form';
+import './form.css'; // 确保引入了 CSS
 
 export default function LoginPage() {
   return (
@@ -10,27 +10,15 @@ export default function LoginPage() {
   );
 }
 
+// 更新后的 Loading 组件：全屏居中，使用新的主题色
 function LoginLoading() {
   return (
-    <div className="login-container">
-      <div className="login-background">
-        <div className="blob blob-1"></div>
-        <div className="blob blob-2"></div>
-        <div className="blob blob-3"></div>
-      </div>
-      <div className="login-card">
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #e2e8f0',
-            borderTopColor: '#667eea',
-            borderRadius: '50%',
-            animation: 'spin 0.8s linear infinite',
-            margin: '0 auto 16px'
-          }}></div>
-          <p style={{ color: '#64748b' }}>加载中...</p>
-        </div>
+    // 复用新的全屏容器样式，并使其居中
+    <div className="login-page-container" style={{ justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8f9fb' }}>
+      <div style={{ textAlign: 'center' }}>
+        {/* 使用 CSS 中定义的 Spinner 类 */}
+        <div className="loading-spinner" style={{ borderTopColor: 'var(--primary-cyan)', width: '40px', height: '40px', margin: '0 auto 20px', border: '4px solid #e0e0e0', borderTop: '4px solid var(--primary-cyan)' }}></div>
+        <p style={{ color: 'var(--text-gray)', fontSize: '18px' }}>Loading Space...</p>
       </div>
     </div>
   );
