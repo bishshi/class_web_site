@@ -7,6 +7,7 @@ import CustomContextMenu from '@/components/CustomContextMenu';
 import TypebotBubble from '@/components/TypebotBubble';
 import Footer from '@/components/Footer';
 import Watermark from "@/components/WaterMark";
+import MatomoTracker from '@/components/MatomoTracker';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,6 +24,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className={inter.className}>
+        <MatomoTracker />
         <CustomContextMenu>
           <Navbar /> 
           {children}
