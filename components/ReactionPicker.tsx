@@ -323,13 +323,17 @@ export default function ReactionPicker({
         {isOpen && (
           <div 
             className="
-              absolute right-0 bottom-full mb-2 
-              bg-white rounded-lg shadow-lg border border-slate-200
-              p-2 flex gap-1
-              z-50
-              animate-in fade-in zoom-in-95 duration-200
+              absolute bottom-full mb-2 
+              /* 关键：移动端右对齐，同时限制最大宽度为视口宽度，防止溢出 */
+              right-0 w-[calc(100vw-2rem)] sm:w-max sm:max-w-[400px]
+              
+              bg-white rounded-xl shadow-xl border border-slate-200
+              p-2 z-50
+              /* 关键：允许换行，并在移动端居中对齐图标 */
+              flex flex-wrap items-center justify-center sm:justify-start gap-1.5
+              
+              animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200
             "
-            style={{ minWidth: "max-content" }}
           >
             {reactionKinds.map(kind => {
               const reactionData = reactionCounts.get(kind.slug);
@@ -341,12 +345,13 @@ export default function ReactionPicker({
                   onClick={() => toggleReaction(kind)}
                   className={`
                     relative group
-                    w-10 h-10 rounded-md
+                    /* 稍微缩小移动端的点击区域，或者保持 10 以利于触摸 */
+                    w-10 h-10 sm:w-11 sm:h-11 rounded-lg
                     flex items-center justify-center
                     transition-all duration-200
                     ${isActive
-                      ? "bg-blue-100 scale-110"
-                      : "hover:bg-slate-100 hover:scale-125"
+                      ? "bg-blue-50 scale-105"
+                      : "hover:bg-slate-100 active:scale-90"
                     }
                   `}
                   title={kind.name}
@@ -355,10 +360,11 @@ export default function ReactionPicker({
                     {kind.emoji || "👍"}
                   </span>
                   
-                  {/* Tooltip */}
+                  {/* Tooltip - 只在支持 hover 的设备上显示 */}
                   <span className="
-                    absolute -top-8 left-1/2 -translate-x-1/2
-                    bg-slate-800 text-white text-xs px-2 py-1 rounded
+                    hidden sm:block
+                    absolute -top-9 left-1/2 -translate-x-1/2
+                    bg-slate-800 text-white text-[10px] px-2 py-1 rounded
                     whitespace-nowrap
                     opacity-0 group-hover:opacity-100
                     pointer-events-none
