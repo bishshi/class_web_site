@@ -4,10 +4,10 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import CustomContextMenu from '@/components/CustomContextMenu';
-import TypebotBubble from '@/components/TypebotBubble';
 import Footer from '@/components/Footer';
 import Watermark from "@/components/WaterMark";
 import MatomoTracker from '@/components/MatomoTracker';
+import FloatingMenu from "@/components/FloatingMenu";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -32,7 +32,7 @@ export default function RootLayout({
           <Footer /> 
         </CustomContextMenu>
         
-        <TypebotBubble />
+        <FloatingMenu />
       </body>
     </html>
   );
